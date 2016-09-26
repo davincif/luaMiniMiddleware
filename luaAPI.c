@@ -39,7 +39,7 @@ static int socket_open()
 static int socket_close()
 {
 /*
-	lua calling: like socket_open(int ScoketToClose)
+	lua calling: like socket_close(int ScoketToClose)
 */
 	LS_Bool ret = LS_True;
 
@@ -61,11 +61,12 @@ static int socket_close()
 static int socket_connect()
 {
 /*
-	lua calling: like socket_open(int socket, char *ipaddr, int port)
+	lua calling: like socket_connect(int socket, char *ipaddr, int port)
 */
 	char *ip;
 	int port, sock;
 	struct sockaddr_in addr;
+	LS_Bool ret = LS_True;
 	
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_connect' must be integer\n");
@@ -75,19 +76,116 @@ static int socket_connect()
 		luaL_error(LCS, "3st argument of function 'socket_connect' must be integer\n");
 
 	port = lua_tointeger(LCS, -1);
-printf("port %d\n", port);
-	ip = lua_tostring(LCS, -2);
-printf("ip %s\n", ip);
-	sock = lua_tointeger(LCS, -3);
-printf("sock %d\n", sock);
 	if(port < 0 || port > MAX_PORT_SIZE)
 		luaL_error(LCS, "port %d is out of range. Must be > 0 and < %d\n", port, MAX_PORT_SIZE);
+	ip = lua_tostring(LCS, -2);
+	sock = lua_tointeger(LCS, -3);
 
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = inet_addr(ip);
 	memset(addr.sin_zero, '\0', sizeof addr.sin_zero);
-	connect(sock, (struct sockaddr *) &addr, sizeof(addr));
+
+	if(connect(sock, (struct sockaddr *) &addr, sizeof(addr)) != 0)
+	{
+		printf("Couldn't connect, C error:  %s\n", strerror(errno));
+		ret = LS_False;
+	}
+
+	lua_pushboolean(LCS, ret);
+	return 1;
+}
+
+static int socket_listen()
+{
+/*
+	lua calling: like socket_listen(int socket)
+*/
+	LS_Bool ret;
+	int sock;
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer\n");
+	sock = lua_tointeger(LCS, -1);
+
+	//this is a blockinf function
+	if(listen(sock, 1) == 0)
+	{
+		ret = LS_True;
+	}else{
+		printf("\tError listening: %s\n", strerror(errno));
+		ret = LS_False;
+	}
+
+	lua_pushboolean(LCS, ret);
+	return 1;
+}
+
+static int socket_bind()
+{
+/*
+	lua calling: like socket_bind(int socket, char *ipaddr, int port)
+*/
+
+	struct sockaddr_in addr;
+	socklen_t addr_size;
+	char *ip;
+	int port, sock;
+	LS_Bool ret;
+	
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+	else if(!lua_isstring(LCS, -2))
+		luaL_error(LCS, "2st argument of function 'socket_bind' must be string\n");
+	else if(!lua_isinteger(LCS, -3))
+		luaL_error(LCS, "3st argument of function 'socket_bind' must be integer\n");
+
+	port = lua_tointeger(LCS, -1);
+	if(port < 0 || port > MAX_PORT_SIZE)
+		luaL_error(LCS, "port %d is out of range. Must be > 0 and < %d\n", port, MAX_PORT_SIZE);
+	ip = lua_tostring(LCS, -2);
+	sock = lua_tointeger(LCS, -3);
+
+	//naming socket
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	addr.sin_addr.s_addr = inet_addr(ip);
+	memset(addr.sin_zero, '\0', sizeof addr.sin_zero);
+	if(bind(sock, (struct sockaddr *) &addr, sizeof(addr)) != 0)
+	{
+		ret = LS_False;
+		printf("\tError binding: %s\n", strerror(errno));
+	}else{
+		ret = LS_True;
+	}
+
+
+	lua_pushboolean(LCS, ret);
+	return 1;
+}
+
+static int socket_accept()
+{
+/*
+	lua calling: like socket_accept(int socket)
+	PS.: this is a blocking function
+*/
+	socklen_t addr_size;
+	struct sockaddr_storage serverStorage;
+	int newSocket;
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+
+	addr_size = sizeof(serverStorage);
+	//this is a blockinf function
+	newSocket = accept(lua_tointeger(LCS, -1), (struct sockaddr *) &serverStorage, &addr_size);
+
+	if(newSocket == -1)
+		printf("\tError accepting: %s\n", strerror(errno));
+
+	lua_pushinteger(LCS, newSocket);
+	return 1;
 }
 /*****************/
 
@@ -124,6 +222,12 @@ void ls_init()
 	lua_setfield(LCS, -2, "close");
 	lua_pushcfunction(LCS, socket_connect);
 	lua_setfield(LCS, -2, "connect");
+	lua_pushcfunction(LCS, socket_listen);
+	lua_setfield(LCS, -2, "listen");
+	lua_pushcfunction(LCS, socket_bind);
+	lua_setfield(LCS, -2, "bind");
+	lua_pushcfunction(LCS, socket_accept);
+	lua_setfield(LCS, -2, "accept");
 	lua_setglobal(LCS, "lsok"); //set general table as "lsok"
 }
 

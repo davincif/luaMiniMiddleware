@@ -1,4 +1,5 @@
 --testes
+--[[
 print("lsok", type(lsok))
 for key, value in pairs(lsok) do
 	print(key,value)
@@ -7,6 +8,7 @@ print("lsok.proto", type(lsok.proto))
 for key, value in pairs(lsok.proto) do
 	print(key,value)
 end
+--]]
 
 --Variables
 local bool
