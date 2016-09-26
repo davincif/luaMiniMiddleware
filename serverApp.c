@@ -8,9 +8,9 @@ int main(int argc, char const *argv[])
 
 	ls_init();
 
-	auxb = ls_run("server.lua");
+	auxb = ls_run("luaServer.lua");
 	if(auxb != LS_False)
-		printf("Error running lua luaClient.lua\n");
+		printf("Error running lua luaServer.lua\n");
 
 	ls_close();
 

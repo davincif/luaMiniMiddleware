@@ -3,3 +3,4 @@ lua-5.3.3/
 *.gch
 application
 clientApp
+serverApp

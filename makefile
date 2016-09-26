@@ -2,10 +2,11 @@ CC=gcc
 CFLAGS=-O3
 LUALIB= -L /lua/ -llua -lm -ldl
 INCLUDES=luaAPI.h tcpSocket.h -I lua/
-OBJ=lsAuxLib.o luaAPI.o tcpSocket.o clientApp.o
+OBJ=lsAuxLib.o luaAPI.o tcpSocket.o
 
-build: $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o clientApp $(LUALIB)
+build: $(OBJ) clientApp.o serverApp.o
+	$(CC) $(CFLAGS) $(OBJ) clientApp.o -o clientApp $(LUALIB)
+	$(CC) $(CFLAGS) $(OBJ) serverApp.o -o serverApp $(LUALIB)
 
 
 lsAuxLib.o:
