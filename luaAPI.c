@@ -7,17 +7,17 @@ static int socket_open()
 /*
 	lua calling: like socket_open(int Protocol)
 */
-	int clientSocket;
+	int sock;
 
 	if(!lua_isinteger(LCS, -1))
 	{
 		luaL_error(LCS, "1st argument of function 'socket_open' must be integer\n");
-		clientSocket = 0;
+		sock = 0;
 	}else{
 		switch(lua_tointeger(LCS, -1))
 		{
 			case LS_PROTO_TCP:
-				clientSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+				sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 			break;
 
 			case LS_PROTO_UDP:
@@ -27,12 +27,12 @@ static int socket_open()
 			
 			default:
 				/*error*/
-				clientSocket = 0;
+				sock = 0;
 				printf("ERROR                           ---            ------\n");
 		}
 	}
 
-	lua_pushinteger(LCS, clientSocket);
+	lua_pushinteger(LCS, sock);
 	return 1;
 }
 
@@ -41,17 +41,18 @@ static int socket_close()
 /*
 	lua calling: like socket_close(int ScoketToClose)
 */
-	LS_Bool ret = LS_True;
+	LS_Bool ret;
 
-	if(!lua_isinteger(LCS, -1)){
+	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+
+	if(shutdown(lua_tointeger(LCS, -1), SHUT_RDWR) == -1)
+	{
+		ret = LS_False;
+		printf("Oh dear, closing a scoket usually do not go wrong... are you sure this is the right socket?\n");
+		printf("Error:  %s\n", strerror(errno));
 	}else{
-		if(shutdown(lua_tointeger(LCS, -1), SHUT_RDWR) != 0)
-		{
-			ret = LS_False;
-			printf("Oh dear, closing a scoket usually do not go wrong... are you sure this is the right socket?\n");
-			printf("Here is the C error msg:  %s\n", strerror(errno));
-		}
+		ret = LS_True;
 	}
 
 	lua_pushboolean(LCS, ret);
@@ -63,7 +64,7 @@ static int socket_connect()
 /*
 	lua calling: like socket_connect(int socket, char *ipaddr, int port)
 */
-	char *ip;
+	const char *ip;
 	int port, sock;
 	struct sockaddr_in addr;
 	LS_Bool ret = LS_True;
@@ -86,9 +87,9 @@ static int socket_connect()
 	addr.sin_addr.s_addr = inet_addr(ip);
 	memset(addr.sin_zero, '\0', sizeof addr.sin_zero);
 
-	if(connect(sock, (struct sockaddr *) &addr, sizeof(addr)) != 0)
+	if(connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1)
 	{
-		printf("Couldn't connect, C error:  %s\n", strerror(errno));
+		printf("Couldn't connect:  %s\n", strerror(errno));
 		ret = LS_False;
 	}
 
@@ -129,7 +130,7 @@ static int socket_bind()
 
 	struct sockaddr_in addr;
 	socklen_t addr_size;
-	char *ip;
+	const char *ip;
 	int port, sock;
 	LS_Bool ret;
 	
@@ -187,6 +188,94 @@ static int socket_accept()
 	lua_pushinteger(LCS, newSocket);
 	return 1;
 }
+
+static int socket_send()
+{
+/*
+	lua calling: like socket_accept(int socket, char *message)
+*/
+	char *msg, msg_size[MAX_MSG_SIZE+1];
+	int bytesent, sock, msglen;
+
+	if(!lua_isinteger(LCS, -2))
+		luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
+	else if(!lua_isstring(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
+
+	sock = lua_tointeger(LCS, -2);
+	msg = lua_tostring(LCS, -1);
+	msglen = strlen(msg)+1;
+	if(msglen > max_msg_len)
+		luaL_error(LCS, "msg is too big, you can't send more than %d bytes at once\n", max_msg_len);
+
+	sprintf(msg_size, "%d", msglen);
+	bytesent = send(sock, msg_size, MAX_MSG_SIZE, MSG_NOSIGNAL);
+	switch(bytesent)
+	{
+		case -1:
+			printf("Couldn't send size msg:  %s\n", strerror(errno));
+		break;
+	
+		case 0:
+			printf("Error! No bytes sent: %s\n", strerror(errno));
+		break;
+		
+		default:
+			//message sent successfully
+			bytesent = send(sock, msg, msglen+1, 0);
+			if(bytesent == -1)
+				printf("Couldn't send msg:  %s\n", strerror(errno));
+			else if(bytesent == 0)
+				printf("Error! No bytes sent: %s\n", strerror(errno));
+	}
+	
+
+	lua_pushinteger(LCS, bytesent);
+	return 1;
+}
+
+static int socket_recv()
+{
+/*
+	lua calling: like socket_accept(int socket)
+	return the string received
+*/
+	int byterecv, sock;
+	char *msg = NULL, msg_size[MAX_MSG_SIZE+1];
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer\n");
+
+	sock = lua_tointeger(LCS, -1);
+
+	byterecv = recv(sock, msg_size, MAX_MSG_SIZE, 0);
+	switch(byterecv)
+	{
+		case -1:
+			printf("Couldn't recv msg size: %s\n", strerror(errno));
+		break;
+
+		case 0:
+			printf("Error! No bytes recv: %s\n", strerror(errno));
+		break;
+
+		default:
+			msg = (char*) malloc(sizeof(char)*(atoi(msg_size)+1));
+			if(msg == NULL)
+				luaL_error(LCS, "Couldn't alloc memory to sotore msg!");
+
+			byterecv = recv(sock, msg, MAX_MSG_SIZE, 0);
+			if(byterecv == -1)
+				printf("Couldn't recv msg size: %s\n", strerror(errno));
+			else if(byterecv == 0)
+				printf("Error! No bytes recv: %s\n", strerror(errno));
+	}
+
+	lua_pushstring(LCS, msg);
+	if(msg != NULL)
+		free(msg);
+	return 1;
+}
 /*****************/
 
 /*GLOBAL FUNCTIONS*/
@@ -197,6 +286,11 @@ lua_State* get_lua_State()
 
 void ls_init()
 {
+/*
+	initialize lua socket API
+*/
+	max_msg_len = ((int) pow((double) 10, (double) (MAX_MSG_SIZE-1))) - 1;
+
 	// Create new Lua state and load the lua libraries
 	LCS = luaL_newstate();
 	if(LCS == NULL)
@@ -209,13 +303,14 @@ void ls_init()
 
 	//creating lua structures
 	lua_newtable(LCS); //general table
-	//creating enums
+	//adding enums
 	lua_newtable(LCS);
 	lua_pushinteger(LCS, LS_PROTO_TCP);
 	lua_setfield(LCS, -2, "tcp");
 	lua_pushinteger(LCS, LS_PROTO_UDP);
 	lua_setfield(LCS, -2, "udp");
 	lua_setfield(LCS, -2, "proto"); //set inner table as "proto"
+	//adding functions
 	lua_pushcfunction(LCS, socket_open);
 	lua_setfield(LCS, -2, "open");
 	lua_pushcfunction(LCS, socket_close);
@@ -228,6 +323,10 @@ void ls_init()
 	lua_setfield(LCS, -2, "bind");
 	lua_pushcfunction(LCS, socket_accept);
 	lua_setfield(LCS, -2, "accept");
+	lua_pushcfunction(LCS, socket_send);
+	lua_setfield(LCS, -2, "send");
+	lua_pushcfunction(LCS, socket_recv);
+	lua_setfield(LCS, -2, "recv");
 	lua_setglobal(LCS, "lsok"); //set general table as "lsok"
 }
 
@@ -243,6 +342,9 @@ LS_Bool ls_run(char *lclient)
 
 void ls_close()
 {
+/*
+	close and clean lua socket API garbage
+*/
 	// Close the Lua state
 	lua_close(LCS);
 }

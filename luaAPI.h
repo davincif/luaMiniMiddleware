@@ -4,9 +4,10 @@
 /*CLIBRARIES*/
 #include <stdio.h>
 #include <errno.h>
-#include "luaAPI.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <math.h>
 /************/
 
 /*MARCOS*/
@@ -36,6 +37,7 @@ enum name
 
 /*GLOBAL VARIABLES*/
 static lua_State *LCS; //Lua Client State
+static int max_msg_len;
 /******************/
 
 /*GLOBAL FUNCTIONS*/
@@ -49,6 +51,11 @@ LS_Bool ls_run(char *lclient);
 static int socket_open();
 static int socket_close();
 static int socket_connect();
+static int socket_listen();
+static int socket_bind();
+static int socket_accept();
+static int socket_send();
+static int socket_recv();
 /*****************/
 
 
