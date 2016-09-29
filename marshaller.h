@@ -1,5 +1,5 @@
-#ifndef MDW_MARSHALLER
-#define MDW_MARSHALLER
+#ifndef LS_MARSHALLER
+#define LS_MARSHALLER
 
 /*CLIBRARIES*/
 #include <stdio.h>
@@ -26,8 +26,8 @@
 /******************/
 
 /*GLOBAL FUNCTIONS*/
-char* MDW_marshall(char *str);
-void MDW_unmarshall(char *str);
+char* ls_marshall(char *str);
+void ls_unmarshall(char *str);
 /******************/
 
 

@@ -11,7 +11,7 @@
 /************/
 
 /*MARCOS*/
-#define MAX_MSG_SIZE 5
+#define MAX_MSG_SIZE 4
 #define MAX_PORT_SIZE 65535
 /********/
 
@@ -23,6 +23,7 @@
 
 /*INTERNAL LIBRARIES*/
 #include "lsAuxLib.h"
+#include "marshaller.h"
 /********************/
 
 /*ENUM AND TYPES*/

@@ -194,7 +194,7 @@ static int socket_send()
 /*
 	lua calling: like socket_accept(int socket, char *message)
 */
-	char *msg, msg_size[MAX_MSG_SIZE+1];
+	char *saux, *msg, msg_size[MAX_MSG_SIZE+1];
 	int bytesent, sock, msglen;
 
 	if(!lua_isinteger(LCS, -2))
@@ -209,7 +209,11 @@ static int socket_send()
 		luaL_error(LCS, "msg is too big, you can't send more than %d bytes at once\n", max_msg_len);
 
 	sprintf(msg_size, "%d", msglen);
-	bytesent = send(sock, msg_size, MAX_MSG_SIZE, MSG_NOSIGNAL);
+	saux = ls_marshall(msg_size);
+	if(saux == NULL)
+		luaL_error(LCS, "out of memory when marshalling");
+	bytesent = send(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL);
+	free(saux);
 	switch(bytesent)
 	{
 		case -1:
@@ -222,13 +226,16 @@ static int socket_send()
 		
 		default:
 			//message sent successfully
-			bytesent = send(sock, msg, msglen+1, 0);
+			saux = ls_marshall(msg);
+			if(saux == NULL)
+				luaL_error(LCS, "out of memory when marshalling");
+			bytesent = send(sock, saux, msglen, 0);
+			free(saux);
 			if(bytesent == -1)
 				printf("Couldn't send msg:  %s\n", strerror(errno));
 			else if(bytesent == 0)
 				printf("Error! No bytes sent: %s\n", strerror(errno));
 	}
-	
 
 	lua_pushinteger(LCS, bytesent);
 	return 1;
@@ -240,7 +247,7 @@ static int socket_recv()
 	lua calling: like socket_accept(int socket)
 	return the string received
 */
-	int byterecv, sock;
+	int byterecv, sock, msglen;
 	char *msg = NULL, msg_size[MAX_MSG_SIZE+1];
 
 	if(!lua_isinteger(LCS, -1))
@@ -248,7 +255,8 @@ static int socket_recv()
 
 	sock = lua_tointeger(LCS, -1);
 
-	byterecv = recv(sock, msg_size, MAX_MSG_SIZE, 0);
+	byterecv = recv(sock, msg_size, MAX_MSG_SIZE+1, 0);
+	ls_unmarshall(msg_size);
 	switch(byterecv)
 	{
 		case -1:
@@ -260,15 +268,24 @@ static int socket_recv()
 		break;
 
 		default:
-			msg = (char*) malloc(sizeof(char)*(atoi(msg_size)+1));
+			msglen = atoi(msg_size);
+			msg = (char*) malloc(sizeof(char)*(msglen+1));
 			if(msg == NULL)
 				luaL_error(LCS, "Couldn't alloc memory to sotore msg!");
 
-			byterecv = recv(sock, msg, MAX_MSG_SIZE, 0);
+			byterecv = recv(sock, msg, msglen, 0);
 			if(byterecv == -1)
+			{
 				printf("Couldn't recv msg size: %s\n", strerror(errno));
-			else if(byterecv == 0)
+				free(msg);
+				msg = NULL;
+			}else if(byterecv == 0){
 				printf("Error! No bytes recv: %s\n", strerror(errno));
+				free(msg);
+				msg = NULL;
+			}else{
+				ls_unmarshall(msg);
+			}
 	}
 
 	lua_pushstring(LCS, msg);

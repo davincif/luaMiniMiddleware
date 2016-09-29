@@ -12,25 +12,25 @@ end
 
 --Variables
 local bool
-local clientSocket
+local clientsocket
 local bytes
 
-clientSocket = lsok.open(lsok.proto.tcp)
-if(clientSocket == 0) then
+clientsocket = lsok.open(lsok.proto.tcp)
+if(clientsocket == 0) then
 	print("LAU: Could not open socket")
 	os.exit(1)
 end
 
-bool = lsok.connect(clientSocket, "127.0.0.1", 2323)
+bool = lsok.connect(clientsocket, "127.0.0.1", 2323)
 if(bool == false) then
-	print("LAU: Could not connect socket: ", clientSocket)
+	print("LAU: Could not connect socket: ", clientsocket)
 	os.exit(1)
 end
 
-stringRet = lsok.recv(clientSocket)
-print("LUA: stringRet: ", stringRet)
+bytes = lsok.send(clientsocket, "FUATI")
+print("LAU: sent bytes", bytes)
 
-bool = lsok.close(clientSocket)
+bool = lsok.close(clientsocket)
 if(bool == false) then
-	print("LAU: Could not close socket: ", clientSocket)
+	print("LAU: Could not close socket: ", clientsocket)
 end

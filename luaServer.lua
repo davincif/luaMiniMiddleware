@@ -1,36 +1,34 @@
 local bool
 local clientsocket
-local serverSocket
+local serversocket
 local stringRet
 
-serverSocket = lsok.open(lsok.proto.tcp)
-if(serverSocket == 0) then
+serversocket = lsok.open(lsok.proto.tcp)
+if(serversocket == 0) then
 	print("LUA: Could not open socket")
 	os.exit(1)
 end
 
-bool = lsok.bind(serverSocket, "127.0.0.1", 2323)
+bool = lsok.bind(serversocket, "127.0.0.1", 2323)
 if(bool == false) then
 	print("LUA: Could bind")
 	os.exit(1)
 end
 
-bool = lsok.listen(serverSocket)
+bool = lsok.listen(serversocket)
 if(bool == false) then
 	os.exit(1)
 end
 
-clientsocket = lsok.accept(serverSocket)
+clientsocket = lsok.accept(serversocket)
 if(clientsocket == -1) then
 	os.exit(1)
 end
 
-print("LAU: serverSocket", serverSocket)
-bytes = lsok.send(clientsocket, "FUATI!")
-print("LAU: bytes", bytes)
+stringRet = lsok.recv(clientsocket)
+print("LUA: recv string", stringRet)
 
-print("LUA: vamo fechar o serverSocket", serverSocket)
-bool = lsok.close(serverSocket)
+bool = lsok.close(serversocket)
 if(bool == false) then
-	print("LUA: Could not close socket: ", serverSocket)
+	print("LUA: Could not close socket: ", serversocket)
 end
