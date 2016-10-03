@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-O3
-LUALIB= -L /lua/ -llua -lm -ldl
+LUALIB= -L ./lua/ -llua -lm -ldl
 INCLUDES=luaAPI.h tcpSocket.h -I lua/
 OBJ=lsAuxLib.o marshaller.o luaAPI.o tcpSocket.o
 

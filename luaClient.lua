@@ -21,16 +21,21 @@ if(clientsocket == 0) then
 	os.exit(1)
 end
 
+bytes = lsok.send(clientsocket, "FUATI!")
+print("LAU: sent bytes", bytes)
+
+--[[
 bool = lsok.connect(clientsocket, "127.0.0.1", 2323)
 if(bool == false) then
 	print("LAU: Could not connect socket: ", clientsocket)
 	os.exit(1)
 end
 
-bytes = lsok.send(clientsocket, "FUATI")
+bytes = lsok.send(clientsocket, "FUATI!")
 print("LAU: sent bytes", bytes)
 
 bool = lsok.close(clientsocket)
 if(bool == false) then
 	print("LAU: Could not close socket: ", clientsocket)
 end
+]]

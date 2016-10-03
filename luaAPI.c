@@ -21,8 +21,7 @@ static int socket_open()
 			break;
 
 			case LS_PROTO_UDP:
-				/*create it*/
-				printf("UDP protocol no implemented yet\n");
+				sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 			break;
 			
 			default:
@@ -192,27 +191,76 @@ static int socket_accept()
 static int socket_send()
 {
 /*
-	lua calling: like socket_accept(int socket, char *message)
+	lua calling: like
+		socket_send(int socket, char *message) if TPC
+		or socket_send(int socket, char *message, char *ip, int port) if UPD
 */
-	char *saux, *msg, msg_size[MAX_MSG_SIZE+1];
-	int bytesent, sock, msglen;
+	char *saux, *msg, *ip, msg_size[MAX_MSG_SIZE+1];
+	int bytesent, sock, msglen, port, proto;
+	struct sockaddr_in serverAddr;
 
-	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
-	else if(!lua_isstring(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
+	switch(lua_gettop(LCS))
+	{
+		case 2: //TCP
+			if(!lua_isinteger(LCS, -2))
+				luaL_error(LCS, "2st argument of function 'socket_send' must be integer\n");
+			else if(!lua_isstring(LCS, -1))
+				luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
 
-	sock = lua_tointeger(LCS, -2);
-	msg = lua_tostring(LCS, -1);
-	msglen = strlen(msg)+1;
-	if(msglen > max_msg_len)
-		luaL_error(LCS, "msg is too big, you can't send more than %d bytes at once\n", max_msg_len);
+			//getting arguments
+			sock = lua_tointeger(LCS, -2);
+			msg = lua_tostring(LCS, -1);
+			msglen = strlen(msg)+1;
+			if(msglen > max_msg_len)
+				luaL_error(LCS, "msg is too big, you can't send more than %d bytes at once\n", max_msg_len);
+			proto = LS_PROTO_TCP;
+		break;
+
+		case 4: //UDP
+			if(!lua_isstring(LCS, -4))
+				luaL_error(LCS, "4st argument of function 'socket_send' must be integer\n");
+			else if(!lua_isinteger(LCS, -3))
+				luaL_error(LCS, "3st argument of function 'socket_send' must be string\n");
+			else if(!lua_isinteger(LCS, -2))
+				luaL_error(LCS, "2st argument of function 'socket_send' must be string\n");
+			else if(!lua_isinteger(LCS, -1))
+				luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
+
+			//getting arguments
+			sock = lua_tointeger(LCS, -4);
+			msg = lua_tostring(LCS, -3);
+			msglen = strlen(msg)+1;
+			if(msglen > max_msg_len)
+				luaL_error(LCS, "msg is too big, you can't send more than %d bytes at once\n", max_msg_len);
+			ip = lua_tostring(LCS, -2);
+			port = lua_tointeger(LCS, -1);
+			proto = LS_PROTO_UDP;
+		break;
+
+		default: //ERROR
+			luaL_error(LCS, "wrong arguments, this function gets 2 or 4 arguments. See API");
+	}
+
 
 	sprintf(msg_size, "%d", msglen);
 	saux = ls_marshall(msg_size);
 	if(saux == NULL)
 		luaL_error(LCS, "out of memory when marshalling");
-	bytesent = send(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL);
+	//seeding via tcp or udp
+	switch(proto)
+	{
+		case LS_PROTO_TCP:
+			bytesent = send(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL);
+		break;
+
+		case LS_PROTO_UDP:
+			serverAddr.sin_family = AF_INET;
+			serverAddr.sin_port = htons(port);
+			serverAddr.sin_addr.s_addr = inet_addr(ip);
+			memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
+			bytesent = sendto(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+		break;
+	}
 	free(saux);
 	switch(bytesent)
 	{
@@ -229,7 +277,17 @@ static int socket_send()
 			saux = ls_marshall(msg);
 			if(saux == NULL)
 				luaL_error(LCS, "out of memory when marshalling");
-			bytesent = send(sock, saux, msglen, 0);
+			//seeding via tcp or udp
+			switch(proto)
+			{
+				case LS_PROTO_TCP:
+					bytesent = send(sock, saux, msglen, MSG_NOSIGNAL);
+				break;
+
+				case LS_PROTO_UDP:
+					bytesent = sendto(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+				break;
+			}
 			free(saux);
 			if(bytesent == -1)
 				printf("Couldn't send msg:  %s\n", strerror(errno));
@@ -244,19 +302,47 @@ static int socket_send()
 static int socket_recv()
 {
 /*
-	lua calling: like socket_accept(int socket)
-	return the string received
+	lua calling: like socket_accept(int socket, int protocol)
+	return the string received if TCP
+	or string received, IP and PORT received if UDP
 */
-	int byterecv, sock, msglen;
-	char *msg = NULL, msg_size[MAX_MSG_SIZE+1];
+	int byterecv, sock, msglen, proto, port;
+	char *msg = NULL, msg_size[MAX_MSG_SIZE+1], *ip;
+	struct sockaddr_in serverStorage;
+	socklen_t socklen;
 
+	if(!lua_isinteger(LCS, -2))
+		luaL_error(LCS, "2st argument of function 'socket_recv' must be integer\n");
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer\n");
 
-	sock = lua_tointeger(LCS, -1);
+	sock = lua_tointeger(LCS, -2);
+	proto = lua_tointeger(LCS, -1);
 
-	byterecv = recv(sock, msg_size, MAX_MSG_SIZE+1, 0);
+	//seeding via tcp or udp
+	switch(proto)
+	{
+		case LS_PROTO_TCP:
+			byterecv = recv(sock, msg_size, MAX_MSG_SIZE+1, 0);
+		break;
+		
+		case LS_PROTO_UDP:
+			socklen = sizeof(serverStorage);
+			byterecv = recvfrom(sock, msg_size, MAX_MSG_SIZE+1, 0, (struct sockaddr *) &serverStorage, &socklen);
+			if(getsockname(sock, (struct sockaddr *) &serverStorage, &socklen) == -1)
+			{
+				//error... don't know how to deal with it ^^"
+			}else{
+				ip = inet_ntoa(serverStorage.sin_addr);
+				port = ntohs(serverStorage.sin_port);
+			}
+		break;
+
+		default:
+			luaL_error(LCS, "Required protocol not recognized\n");
+	}
 	ls_unmarshall(msg_size);
+	//chekcing if send worked fine
 	switch(byterecv)
 	{
 		case -1:
@@ -273,7 +359,18 @@ static int socket_recv()
 			if(msg == NULL)
 				luaL_error(LCS, "Couldn't alloc memory to sotore msg!");
 
-			byterecv = recv(sock, msg, msglen, 0);
+			//seeding via tcp or udp
+			switch(proto)
+			{
+				case LS_PROTO_TCP:
+					byterecv = recv(sock, msg, msglen, 0);
+				break;
+				
+				case LS_PROTO_UDP:
+					byterecv = recvfrom(sock, msg, msglen, 0, (struct sockaddr *) &serverStorage, &socklen);
+				break;
+			}
+			//chekcing if send worked fine
 			if(byterecv == -1)
 			{
 				printf("Couldn't recv msg size: %s\n", strerror(errno));
