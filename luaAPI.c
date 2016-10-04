@@ -217,11 +217,11 @@ static int socket_send()
 		break;
 
 		case 4: //UDP
-			if(!lua_isstring(LCS, -4))
+			if(!lua_isinteger(LCS, -4))
 				luaL_error(LCS, "4st argument of function 'socket_send' must be integer\n");
-			else if(!lua_isinteger(LCS, -3))
+			else if(!lua_isstring(LCS, -3))
 				luaL_error(LCS, "3st argument of function 'socket_send' must be string\n");
-			else if(!lua_isinteger(LCS, -2))
+			else if(!lua_isstring(LCS, -2))
 				luaL_error(LCS, "2st argument of function 'socket_send' must be string\n");
 			else if(!lua_isinteger(LCS, -1))
 				luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
