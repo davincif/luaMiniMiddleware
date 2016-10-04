@@ -5,8 +5,9 @@ INCLUDES=luaAPI.h tcpSocket.h -I lua/
 OBJ=lsAuxLib.o marshaller.o luaAPI.o tcpSocket.o
 
 build: $(OBJ) clientApp.o serverApp.o
-	$(CC) $(CFLAGS) $(OBJ) clientApp.o -o clientApp $(LUALIB)
-	$(CC) $(CFLAGS) $(OBJ) serverApp.o -o serverApp $(LUALIB)
+	$(CC) $(CFLAGS) $(OBJ) clientApp.o -o ../clientApp $(LUALIB)
+	$(CC) $(CFLAGS) $(OBJ) serverApp.o -o ../serverApp $(LUALIB)
+	make clean
 
 
 lsAuxLib.o:
@@ -31,4 +32,4 @@ clean:
 	rm -f -v ./*.o ./*.h.gch
 
 remove:
-	rm -f -v ./*.o ./*.h.gch clientApp serverApp
+	rm -f -v ./*.o ./*.h.gch ../clientApp ../serverApp

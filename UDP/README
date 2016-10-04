@@ -1,9 +1,0 @@
-COMPATIBILIDADE:
-	Rodando apenas em unix, porém como usa apenas aspectos básicos da biblioteca sys/, é bem provavel que também rode em OSX.
-
-COMPILANDO:
-	basta entrar na página com o terminal rodar o comando "make".
-
-RODANDO:
-	abra um terminal e execute o programa "application"
-	em outro terminal rode o programa "clientApp"
