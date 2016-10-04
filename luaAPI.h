@@ -27,9 +27,15 @@
 /********************/
 
 /*ENUM AND TYPES*/
-enum name
+enum LS_PROTO_NAME
 {
 	LS_PROTO_NONE = 0, LS_PROTO_TCP, LS_PROTO_UDP, LS_PROTO_TOKEN
+};
+
+enum LS_SHUT_MODE
+{
+	LS_SHUT_MODE_NONE = 0, LS_SHUT_MODE_RECV = SHUT_RD, LS_SHUT_MODE_SEND = SHUT_WR,
+	LS_SHUT_MODE_RS = SHUT_RDWR, LS_SHUT_MODE_TOKEN
 };
 /****************/
 
@@ -51,6 +57,7 @@ LS_Bool ls_run(char *lclient);
 /*LOCAL FUNCTIONS*/
 static int socket_open();
 static int socket_close();
+static int socket_shutdown();
 static int socket_connect();
 static int socket_listen();
 static int socket_bind();

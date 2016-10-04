@@ -10,8 +10,10 @@ for key, value in pairs(lsok.proto) do
 end
 --]]
 
-print("Use UDP or TCP?")
-if(string.lower(io.read()) == "tcp") then
+print("LUA: Use UDP or TCP?")
+proto = "udp"
+if(proto == "tcp") then --TCP
+print("LUA: tcp")
 	clientsocket = lsok.open(lsok.proto.tcp)
 	if(clientsocket == 0) then
 		print("LAU: Could not open socket")
@@ -31,7 +33,8 @@ if(string.lower(io.read()) == "tcp") then
 	if(bool == false) then
 		print("LAU: Could not close socket: ", clientsocket)
 	end
-elseif(string.lower(io.read()) == "udp") then
+elseif(proto == "udp") then --UDP
+print("LUA: udp")
 	clientsocket = lsok.open(lsok.proto.udp)
 	if(clientsocket == 0) then
 		print("LAU: Could not open socket")

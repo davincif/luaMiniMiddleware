@@ -1,5 +1,7 @@
-print("Use UDP or TCP?")
-if(string.lower(io.read()) == "tcp") then --TPC
+print("LUA: Use UDP or TCP?")
+proto = "udp"
+if(proto == "tcp") then --TCP
+print("LUA: tcp")
 	serversocket = lsok.open(lsok.proto.tcp)
 	if(serversocket == 0) then
 		print("LUA: Could not open socket")
@@ -29,7 +31,8 @@ if(string.lower(io.read()) == "tcp") then --TPC
 	if(bool == false) then
 		print("LUA: Could not close socket: ", serversocket)
 	end
-elseif(string.lower(io.read()) == "udp") then --UDP
+elseif(proto == "udp") then --UDP
+print("LUA: udp")
 	serversocket = lsok.open(lsok.proto.udp)
 	if(serversocket == 0) then
 		print("LUA: Could not open socket")

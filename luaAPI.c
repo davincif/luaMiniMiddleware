@@ -25,10 +25,12 @@ static int socket_open()
 			break;
 			
 			default:
-				/*error*/
 				sock = 0;
-				printf("ERROR                           ---            ------\n");
+				printf("Error, socket protocol not recognized\n");
 		}
+
+		if(sock == -1)
+			printf("Error opening socket:  %s\n", strerror(errno));
 	}
 
 	lua_pushinteger(LCS, sock);
@@ -45,13 +47,47 @@ static int socket_close()
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
 
-	if(shutdown(lua_tointeger(LCS, -1), SHUT_RDWR) == -1)
+	if(close(lua_tointeger(LCS, -1)) == -1)
 	{
 		ret = LS_False;
 		printf("Oh dear, closing a scoket usually do not go wrong... are you sure this is the right socket?\n");
 		printf("Error:  %s\n", strerror(errno));
 	}else{
 		ret = LS_True;
+	}
+
+	lua_pushboolean(LCS, ret);
+	return 1;
+}
+
+static int socket_shutdown()
+{
+/*
+	lua calling: like socket_shutdown(int ScoketToClose, int how)
+*/
+	LS_Bool ret;
+	enum LS_SHUT_MODE shutmode;
+
+	if(!lua_isinteger(LCS, -2))
+		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+
+	shutmode = lua_tointeger(LCS, -1);
+
+	if(shutmode <= LS_SHUT_MODE_NONE || shutmode >= LS_SHUT_MODE_TOKEN)
+	{
+		ret = LS_False;
+		printf("Error, shutdown mode not recognized\n");
+	}else{
+		if(shutdown(lua_tointeger(LCS, -2), shutmode) == -1)
+		{
+			ret = LS_False;
+			printf("Oh dear, shutting down a scoket usually do not go wrong... are you sure this is the right socket?\n");
+			printf("Error:  %s\n", strerror(errno));
+		}else{
+			ret = LS_True;
+		}
 	}
 
 	lua_pushboolean(LCS, ret);
@@ -285,7 +321,7 @@ static int socket_send()
 				break;
 
 				case LS_PROTO_UDP:
-					bytesent = sendto(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+					bytesent = sendto(sock, saux, msglen, MSG_NOSIGNAL, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 				break;
 			}
 			free(saux);
@@ -429,6 +465,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "open");
 	lua_pushcfunction(LCS, socket_close);
 	lua_setfield(LCS, -2, "close");
+	lua_pushcfunction(LCS, socket_shutdown);
+	lua_setfield(LCS, -2, "shutdown");
 	lua_pushcfunction(LCS, socket_connect);
 	lua_setfield(LCS, -2, "connect");
 	lua_pushcfunction(LCS, socket_listen);
