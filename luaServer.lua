@@ -2,8 +2,8 @@ print("LUA: Use UDP or TCP?")
 proto = "udp"
 
 if(proto == "tcp") then
---[[	TCP		]]
-print("LUA: tcp")
+	--[[	TCP		]]
+	print("LUA: tcp")
 	serversocket = lsok.open(lsok.proto.tcp)
 	if(serversocket == 0) then
 		print("LUA: Could not open socket")
@@ -29,13 +29,20 @@ print("LUA: tcp")
 	stringRet = lsok.recv(clientsocket, lsok.proto.tcp)
 	print("LUA: recv string", stringRet)
 
+	bytes = lsok.send(clientsocket, stringRet)
+	print("LAU: sent bytes", bytes)
+
 	bool = lsok.close(serversocket)
 	if(bool == false) then
 		print("LUA: Could not close socket: ", serversocket)
 	end
+	bool = lsok.close(clientsocket)
+	if(bool == false) then
+		print("LUA: Could not close socket: ", clientsocket)
+	end
 elseif(proto == "udp") then
 	--[[	UDP		]]
-print("LUA: udp")
+	print("LUA: udp")
 	serversocket = lsok.open(lsok.proto.udp)
 	if(serversocket == 0) then
 		print("LUA: Could not open socket")
@@ -48,10 +55,10 @@ print("LUA: udp")
 		os.exit(1)
 	end
 
-	stringRet, clientIp, clientPort = lsok.recv(serversocket, lsok.proto.udp)
-	print("LUA: recvs: ", stringRet, clientIp, clientPort)
+	stringRet = lsok.recv(serversocket, lsok.proto.udp)
+	print("LUA: recvs: ", stringRet)
 
-	bytes = lsok.send(serversocket, stringRet, clientIp, clientPort)
+	bytes = lsok.send(serversocket, stringRet, "127.0.0.1", 3232)
 	print("LAU: sent bytes", bytes)
 
 
