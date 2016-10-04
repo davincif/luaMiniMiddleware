@@ -69,9 +69,9 @@ static int socket_shutdown()
 	enum LS_SHUT_MODE shutmode;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
 
 	shutmode = lua_tointeger(LCS, -1);
 
@@ -119,7 +119,7 @@ static int socket_connect()
 
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr(ip);
+	inet_aton(ip, &addr.sin_addr);
 	memset(addr.sin_zero, '\0', sizeof addr.sin_zero);
 
 	if(connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1)
@@ -144,7 +144,6 @@ static int socket_listen()
 		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer\n");
 	sock = lua_tointeger(LCS, -1);
 
-	//this is a blockinf function
 	if(listen(sock, 1) == 0)
 	{
 		ret = LS_True;
@@ -185,7 +184,7 @@ static int socket_bind()
 	//naming socket
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr(ip);
+	inet_aton(ip, &addr.sin_addr);
 	memset(addr.sin_zero, '\0', sizeof addr.sin_zero);
 	if(bind(sock, (struct sockaddr *) &addr, sizeof(addr)) != 0)
 	{
@@ -292,7 +291,7 @@ static int socket_send()
 		case LS_PROTO_UDP:
 			serverAddr.sin_family = AF_INET;
 			serverAddr.sin_port = htons(port);
-			serverAddr.sin_addr.s_addr = inet_addr(ip);
+			inet_aton(ip, &serverAddr.sin_addr);
 			memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 			bytesent = sendto(sock, saux, MAX_MSG_SIZE+1, MSG_NOSIGNAL, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 		break;
@@ -339,10 +338,11 @@ static int socket_recv()
 {
 /*
 	lua calling: like socket_accept(int socket, int protocol)
-	return the string received if TCP
+	returns the string received if TCP
 	or string received, IP and PORT received if UDP
+	OBS.: this is a blocking function
 */
-	int byterecv, sock, msglen, proto, port;
+	int byterecv, sock, msglen, proto, port, ret = 1;
 	char *msg = NULL, msg_size[MAX_MSG_SIZE+1], *ip;
 	struct sockaddr_in serverStorage;
 	socklen_t socklen;
@@ -404,6 +404,7 @@ static int socket_recv()
 				
 				case LS_PROTO_UDP:
 					byterecv = recvfrom(sock, msg, msglen, 0, (struct sockaddr *) &serverStorage, &socklen);
+					ret = 3;
 				break;
 			}
 			//chekcing if send worked fine
@@ -424,7 +425,12 @@ static int socket_recv()
 	lua_pushstring(LCS, msg);
 	if(msg != NULL)
 		free(msg);
-	return 1;
+	if(proto == LS_PROTO_UDP)
+	{
+		lua_pushstring(LCS, ip);
+		lua_pushinteger(LCS, port);
+	}
+	return ret;
 }
 /*****************/
 
