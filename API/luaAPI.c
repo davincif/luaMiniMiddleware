@@ -433,11 +433,24 @@ static int socket_recv()
 	return ret;
 }
 
-static int is_bigendian()
+static int ls_is_bigendian()
 {
 	int flag = 2;
 
 	lua_pushboolean(LCS, LS_IS_BIGENDIAN(flag));
+	return 1;
+}
+
+static int ls_is_proto_valid()
+{
+	enum LS_PROTO_TYPE proto;
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'ls_is_proto_valid' must be integer\n");
+
+	proto = lua_tointeger(LCS, -1);
+
+	lua_pushboolean(LCS, LS_IS_PROTO_VALID(proto));
 	return 1;
 }
 /*****************/
@@ -469,10 +482,14 @@ void ls_init()
 	lua_newtable(LCS); //general table
 	//adding enums
 	lua_newtable(LCS);
+	lua_pushinteger(LCS, LS_PROTO_NONE);
+	lua_setfield(LCS, -2, "none");
 	lua_pushinteger(LCS, LS_PROTO_TCP);
 	lua_setfield(LCS, -2, "tcp");
 	lua_pushinteger(LCS, LS_PROTO_UDP);
 	lua_setfield(LCS, -2, "udp");
+	lua_pushinteger(LCS, LS_PROTO_TOKEN);
+	lua_setfield(LCS, -2, "token");
 	lua_setfield(LCS, -2, "proto"); //set inner table as "proto"
 	//adding functions
 	lua_pushcfunction(LCS, socket_open);
@@ -493,9 +510,13 @@ void ls_init()
 	lua_setfield(LCS, -2, "send");
 	lua_pushcfunction(LCS, socket_recv);
 	lua_setfield(LCS, -2, "recv");
-	lua_pushcfunction(LCS, is_bigendian);
+	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
+	lua_pushcfunction(LCS, ls_is_proto_valid);
+	lua_setfield(LCS, -2, "is_proto_valid");
 	lua_setglobal(LCS, "lsok"); //set general table as "lsok"
+
+	ls_run("conf.lua"); //running configure file
 }
 
 LS_Bool ls_run(char *lclient)

@@ -27,10 +27,11 @@
 #define MAX_MSG_SIZE 4
 #define MAX_PORT_SIZE 65535
 #define LS_IS_BIGENDIAN(A) ((*(char*)&A == 0) ? LS_True : LS_False)
+#define LS_IS_PROTO_VALID(A) ((A > LS_PROTO_NONE && A < LS_PROTO_TOKEN) ? LS_True : LS_False)
 /********/
 
 /*ENUM AND TYPES*/
-enum LS_PROTO_NAME
+enum LS_PROTO_TYPE
 {
 	LS_PROTO_NONE = 0, LS_PROTO_TCP, LS_PROTO_UDP, LS_PROTO_TOKEN
 };
@@ -67,7 +68,8 @@ static int socket_bind();
 static int socket_accept();
 static int socket_send();
 static int socket_recv();
-static int is_bigendian();
+static int ls_is_bigendian();
+static int ls_is_proto_valid();
 /*****************/
 
 
