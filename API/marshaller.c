@@ -13,7 +13,7 @@ char* ls_marshall(char *str)
 		newstr = NULL;
 	}else{
 		strcpy(newstr, str);
-		newstr[aux] = (char) 1;
+		newstr[aux] = mflag;
 		newstr[aux+1] = '\0';
 	}
 
@@ -25,7 +25,7 @@ void ls_unmarshall(char *str)
 	int iaux;
 
 	iaux = strlen(str)-1;
-	if(str[iaux] == (char) 1)
+	if(str[iaux] == mflag)
 	{//everything is all right, go on
 		str[iaux] = '\0';
 	}else{

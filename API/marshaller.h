@@ -25,6 +25,10 @@
 /*GLOBAL VARIABLES*/
 /******************/
 
+/*LOCAL VARIABLES*/
+static const char mflag = (char) 2;
+/*****************/
+
 /*GLOBAL FUNCTIONS*/
 char* ls_marshall(char *str);
 void ls_unmarshall(char *str);

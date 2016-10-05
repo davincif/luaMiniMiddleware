@@ -432,6 +432,14 @@ static int socket_recv()
 	}
 	return ret;
 }
+
+static int is_bigendian()
+{
+	int flag = 2;
+
+	lua_pushboolean(LCS, LS_IS_BIGENDIAN(flag));
+	return 1;
+}
 /*****************/
 
 /*GLOBAL FUNCTIONS*/
@@ -485,6 +493,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "send");
 	lua_pushcfunction(LCS, socket_recv);
 	lua_setfield(LCS, -2, "recv");
+	lua_pushcfunction(LCS, is_bigendian);
+	lua_setfield(LCS, -2, "is_bigendian");
 	lua_setglobal(LCS, "lsok"); //set general table as "lsok"
 }
 

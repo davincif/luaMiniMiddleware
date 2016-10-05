@@ -12,11 +12,6 @@
 #include <math.h>
 /************/
 
-/*MARCOS*/
-#define MAX_MSG_SIZE 4
-#define MAX_PORT_SIZE 65535
-/********/
-
 /*EXTERNAL LIBRARIES*/
 #include "lua/lua.h"
 #include "lua/lualib.h"
@@ -27,6 +22,12 @@
 #include "lsAuxLib.h"
 #include "marshaller.h"
 /********************/
+
+/*MARCOS*/
+#define MAX_MSG_SIZE 4
+#define MAX_PORT_SIZE 65535
+#define LS_IS_BIGENDIAN(A) ((*(char*)&A == 0) ? LS_True : LS_False)
+/********/
 
 /*ENUM AND TYPES*/
 enum LS_PROTO_NAME
@@ -66,6 +67,7 @@ static int socket_bind();
 static int socket_accept();
 static int socket_send();
 static int socket_recv();
+static int is_bigendian();
 /*****************/
 
 
