@@ -22,15 +22,22 @@ char* ls_marshall(char *str)
 
 void ls_unmarshall(char *str)
 {
-	int aux;
+	int iaux;
 
-	aux = strlen(str)-1;
-	if(str[aux] == (char) 1)
+	iaux = strlen(str)-1;
+	if(str[iaux] == (char) 1)
 	{//everything is all right, go on
-		str[aux] = '\0';
+		str[iaux] = '\0';
 	}else{
-		//houston, we have a problem.
-		printf("unmarshalling error!\n");
+		printf("marshalling!\n");
+		for(iaux = 0; str[iaux] != '\0'; iaux++)
+		{
+			str[iaux] = ((str[iaux] & 0xF0) >> 4) | ((str[iaux] & 0x0F) << 4);
+			str[iaux] = ((str[iaux] & 0xCC) >> 2) | ((str[iaux] & 0x33) << 2);
+			str[iaux] = ((str[iaux] & 0xAA) >> 1) | ((str[iaux] & 0x55) << 1);
+		}
+		if(str[iaux] == (char) 1)
+			printf("marshalling error!\n");
 	}
 }
 /******************/
