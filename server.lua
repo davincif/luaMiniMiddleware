@@ -1,5 +1,4 @@
 --[[	SERVER	]]
-
 services = {} --all services my server can provide
 
 function services.echo(str)
@@ -15,7 +14,7 @@ function services.echo(str)
 		print("SERVER: ECHO's argument spected to be string but it's " .. type(strmsg))
 		sret = false
 	else
-		print("SERVER: echo invoked for "..str) --test line
+		print("SERVER: echo invoked for "..str) --testline
 		sret = str
 	end
 

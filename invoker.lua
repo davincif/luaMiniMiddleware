@@ -1,7 +1,4 @@
 --[[	INVOKER	]]
-require "srh"
-require "server"
-
 invok = {}
 
 function invok.invoker(command)

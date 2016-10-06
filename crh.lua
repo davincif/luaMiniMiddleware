@@ -83,11 +83,10 @@ function crh.send(strmsg, proto, service)
 			taux.service = service
 			taux.openedAt = os.time()
 			taux.lastUse = taux.openedAt
-			key = tostring(key)
 		end
 	end
 
-	return sret
+	return key
 end
 
 function crh.recv(key, flag)
@@ -104,17 +103,17 @@ function crh.recv(key, flag)
 	if(key == nil or type(key) ~= "string") then
 		sret = ""
 		print("LUA: in crh.recv 1st argument must be a key string")
-	elseif(socks.key == nil) then
+	elseif(socks[key] == nil) then
 		sret = ""
 		print("LUA: the given key does not exist")
-	elseif((os.time() - socktable.lastUse > socks.cautionTime) and (lsok.is_socket_open() == false)) then
+	elseif((os.time() - socks[key].lastUse > socks.cautionTime) and (lsok.is_socket_open() == false)) then
 		sret = ""
-		print("LUA: socket \""..socktable.sock.."\" was closed by the OS")
-		socktable = nil
+		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
+		socks[key] = nil
 		socks.skey = nil
 		--one day we will implement an automatically reopen of the socket
 	else
-		socktable = socks.key
+		socktable = socks[key]
 		if(socktable.proto == lsok.proto.tcp) then
 			sret = lsok.recv(socktable.sock, lsok.proto.tcp)
 			print("LUA: recv string", sret) --testline
@@ -144,10 +143,10 @@ function crh.getkey(service)
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 ]]
-	local skey
+	local skey = ""
 
 	for key,value in pairs(socks) do
-		if(type(socks.key) == table and type(socks.key.service) ~= nil and socks.key.service == service) then
+		if(type(socks[key]) == table and type(socks[key].service) ~= nil and socks[key].service == service) then
 			skey = key
 		end
 	end
@@ -167,7 +166,7 @@ function crh.close(service)
 	local bool
 
 	for key,value in pairs(socks) do
-		if(type(socks.key) == table and type(socks.key.service) ~= nil and socks.key.service == service) then
+		if(type(socks[key]) == table and type(socks[key].service) ~= nil and socks[key].service == service) then
 			ok = true
 			skey = key
 		end

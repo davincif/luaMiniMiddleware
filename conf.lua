@@ -4,7 +4,7 @@ conf = {}
 
 --	EDIT THIS SECTION AT YOUR WILL	--
 conf.client = "client.lua"	--defines what file will be invoked when the client is called
-conf.server = "server.lua"	--defines what file will be invoked when the server is called
+conf.server = "srh.lua"	--defines what file will be invoked when the server is called
 conf.proto = "tcp"		--preferencial protocol do be used
 
 
