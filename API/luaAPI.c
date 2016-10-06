@@ -435,6 +435,10 @@ static int socket_recv()
 
 static int ls_is_bigendian()
 {
+/*
+	lua calling: like ls_is_bigendian()
+	returns true if it is bigendiean, false if not
+*/
 	int flag = 2;
 
 	lua_pushboolean(LCS, LS_IS_BIGENDIAN(flag));
@@ -443,6 +447,10 @@ static int ls_is_bigendian()
 
 static int ls_is_proto_valid()
 {
+/*
+	lua calling: like ls_is_proto_valid(int proto)
+	returns true if the protocol is valid, false if not
+*/
 	enum LS_PROTO_TYPE proto;
 
 	if(!lua_isinteger(LCS, -1))
@@ -451,6 +459,50 @@ static int ls_is_proto_valid()
 	proto = lua_tointeger(LCS, -1);
 
 	lua_pushboolean(LCS, LS_IS_PROTO_VALID(proto));
+	return 1;
+}
+
+static int ls_is_socket_open()
+{
+/*
+	lua calling: like ls_is_socket_open(int socket)
+	returns true if it the socket is open, false if not
+*/
+	int proto, iaux;
+	LS_Bool isopen;
+	char buff[] = "test";
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'ls_is_socket_open' must be integer\n");
+
+	proto = lua_tointeger(LCS, -1);
+
+	iaux = write(proto, buff, 4);
+	switch(iaux)
+	{
+		case -1:
+			//error
+			isopen = LS_False;
+		break;
+
+		case 0:
+			//cant write now
+			isopen = LS_True;
+			printf("Error socket is not closed, but couldn't write on it:  %s\n", strerror(errno));
+		break;
+		
+		case 4:
+			//everything all right
+			isopen = LS_True;
+		break;
+		
+		default:
+			//send an email off to the kernel developers with some acerbic comment. Linus et al will love that!
+			isopen = LS_False;
+			printf("Ual! We wrote more bytes on the socker than we wanted... Linus, your kernel has a problem ^^'\n");
+	}
+
+	lua_pushboolean(LCS, isopen);
 	return 1;
 }
 /*****************/
@@ -514,6 +566,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);
 	lua_setfield(LCS, -2, "is_proto_valid");
+	lua_pushcfunction(LCS, ls_is_socket_open);
+	lua_setfield(LCS, -2, "is_socket_open");
 	lua_setglobal(LCS, "lsok"); //set general table as "lsok"
 
 	ls_run("conf.lua"); //running configure file

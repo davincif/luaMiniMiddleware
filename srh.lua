@@ -1,7 +1,19 @@
 --[[	SERVER TO REQUEST HANDLER	]]
 srh = {}
+local socks = {}
+socks.max = 100 --max of socket that may be opened at the same time
+socks.cautionTime = 2 --if a socket spent more than this time without being used, be cautious
 
-function srh.recv(strmsg, proto)
+math.randomseed(os.time())
+
+--	GLOBAL FUNCTIONS	--
+function srh.recv(proto)
+--[[
+	parameters:
+		proto - the protocol to be used.
+	return:
+		-
+]]
 	local sret
 	local serversocket
 	local clientsocket
@@ -9,13 +21,10 @@ function srh.recv(strmsg, proto)
 	local bytes
 
 	if(type(proto) ~= "number") then
-		sret = nil
+		sret = ""
 		print("srh.recv 2st argument spected to be number but it's " .. type(proto))
-	elseif(type(strmsg) ~= "string") then
-		sret = nil
-		print("srh.recv 1st argument spected to be string but it's " .. type(strmsg))
-	elseif(proto <= lsok.proto.nome and proto >= lsok.proto.token) then
-		sret = nil
+	elseif(lsok.is_proto_valid(proto) == false) then
+		sret = ""
 		print("in srh.recv, protocol \"" .. proto .. "\" not recognized")
 	else
 		if(proto == lsok.proto.tcp) then
@@ -87,4 +96,36 @@ function srh.recv(strmsg, proto)
 	end
 
 	return sret
+end
+
+
+--	LOCAL FUNCTIONS	--
+function socks.create()
+--[[
+	parameters:
+		any
+	return:
+		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
+]]
+	local key
+	local count = 0
+
+	key = math.random(socks.max)
+	while(socks[tostring(key)] ~= nil and count <= socks.max) do
+		key = key + 1
+		if(key > socks.max) then
+			key = 1
+		end
+		count = count + 1
+	end
+
+	if(count > socks.max) then
+		--to many sockets opened
+		key = ""
+		print("LUA: cant open a new socket. There's already too many")
+	else
+		key = tostring(key)
+	end
+
+	return key
 end

@@ -5,25 +5,31 @@ cproxy = {}
 cproxy.proto = lsok.proto.tcp -- preferencial protocol to be used, TCP by pattern.
 
 function cproxy.echo(str)
-	local ok
+--[[
+	parameters:
+		str - string that you want to see the echo
+	return:
+		on success the returned string (str), an empty string otherwise.
+]]
+	local sret
 	local msg
 
-	if(type(str) == "string") then
+	if(type(str) ~= "string") then
+		print("cproxy.echo argument spected to be string but it's " .. type(str))
+		sret = ""
+	else
 		msg = {}
 		msg.service = "ECHO"
 		msg.load = str
-		ok = request.echo(msg)
-	else
-		print("cproxy.echo argument spected to be string but it's " .. type(str))
-		ok = false
+		sret = request.echo(msg)
 	end
 
-	return ok
+	return sret
 end
 
 function cproxy.set_preferencial_proto(proto)
 --[[
-	parametrs:
+	parameters:
 		proto - what the procotol shall be the preferencial protocol now
 	return:
 		false if this protocol is not supported, true otherwise.
