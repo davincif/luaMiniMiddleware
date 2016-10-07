@@ -41,39 +41,35 @@ function crh.send(strmsg, proto, service)
 		if(key ~= "") then
 			if(proto == lsok.proto.tcp) then
 				--[[	TCP		]]
-				print("LUA: tcp") --testline
 				clientsocket = lsok.open(lsok.proto.tcp)
 				if(clientsocket == 0) then
 					print("LAU: Could not open socket")
-					os.exit(1)
+					os.exit()
 				end
 
 				bool = lsok.connect(clientsocket, "127.0.0.1", 2323)
 				if(bool == false) then
 					print("LAU: Could not connect socket: ", clientsocket)
-					os.exit(1)
+					os.exit()
 				end
 
 				bytes = lsok.send(clientsocket, strmsg)
-				print("LAU: sent bytes", bytes) --testline
 			elseif(proto == lsok.proto.udp) then
 				--[[	UDP		]]
-				print("LUA: udp") --testline
 				clientsocket = lsok.open(lsok.proto.udp)
 				if(clientsocket == 0) then
 					print("LAU: Could not open socket")
-					os.exit(1)
+					os.exit()
 				end
 
 				bool = lsok.bind(clientsocket, "127.0.0.1", 3232)
 				if(bool == false) then
 					print("LUA: Could not bind")
-					os.exit(1)
+					os.exit()
 				end
 
 
 				bytes = lsok.send(clientsocket, strmsg, "127.0.0.1", 2323)
-				print("LAU: sent bytes", bytes) --testline
 			end
 
 			socks[key] = {}
@@ -92,7 +88,7 @@ end
 function crh.recv(key, flag)
 --[[
 	parameters:
-		service - who had already requested a send? and now whant to receive the return msg.
+		service - who had already requested a recv? and now whant to receive the return msg.
 		flag - pas true to delete this socket after use if the service wont the socket anymore.
 	return:
 		on success the returned string, an empty string otherwise.
@@ -110,16 +106,13 @@ function crh.recv(key, flag)
 		sret = ""
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
 		socks[key] = nil
-		socks.skey = nil
 		--one day we will implement an automatically reopen of the socket
 	else
 		socktable = socks[key]
 		if(socktable.proto == lsok.proto.tcp) then
 			sret = lsok.recv(socktable.sock, lsok.proto.tcp)
-			print("LUA: recv string", sret) --testline
 		elseif(socktable.proto == lsok.proto.udp) then
-			stringRet = lsok.recv(socktable.sock, lsok.proto.udp)
-			print("LUA: recv string", stringRet) --testline
+			sret = lsok.recv(socktable.sock, lsok.proto.udp)
 		end
 		if(flag ~= nil and flag == true) then
 			bool = lsok.close(socktable.sock)
@@ -127,7 +120,7 @@ function crh.recv(key, flag)
 				print("LAU: Could not close socket: ", socktable.sock)
 			end
 			socktable = nil
-			socks.skey = nil
+			socks[key] = nil
 		else
 			socktable.lastUse = os.time()
 		end
@@ -146,7 +139,7 @@ function crh.getkey(service)
 	local skey = ""
 
 	for key,value in pairs(socks) do
-		if(type(socks[key]) == table and type(socks[key].service) ~= nil and socks[key].service == service) then
+		if(type(value) == "table" and type(socks[key].service) ~= nil and socks[key].service == service) then
 			skey = key
 		end
 	end
@@ -166,7 +159,7 @@ function crh.close(service)
 	local bool
 
 	for key,value in pairs(socks) do
-		if(type(socks[key]) == table and type(socks[key].service) ~= nil and socks[key].service == service) then
+		if(type(value) == "table" and type(value.service) ~= nil and value.service == service) then
 			ok = true
 			skey = key
 		end
@@ -175,11 +168,11 @@ function crh.close(service)
 	if(ok == false) then
 		print("LUA: no socket found to this service")
 	else
-		bool = lsok.close(socks.skey.sock)
+		bool = lsok.close(socks[skey].sock)
 		if(bool == false) then
-			print("LAU: Could not close socket: ", socks.skey.sock)
+			print("LAU: Could not close socket: ", socks[skey].sock)
 		end
-		socks.skey = nil
+		socks[skey] = nil
 	end
 
 	return ok
