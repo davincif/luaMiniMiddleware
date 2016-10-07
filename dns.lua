@@ -1,0 +1,1 @@
+--[[	DYNAMIC NAME SERVICE	]]
