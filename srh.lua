@@ -1,6 +1,5 @@
 --[[	SERVER TO REQUEST HANDLER	]]
 require "invoker"
-require "server"
 
 srh = {}
 local socks = {}
