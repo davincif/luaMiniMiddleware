@@ -3,9 +3,11 @@ conf = {}
 
 
 --	EDIT THIS SECTION AT YOUR WILL	--
-conf.client = "client.lua"	--defines what file will be invoked when the client is called
-conf.server = "srh.lua"	--defines what file will be invoked when the server is called
-conf.proto = "tcp"		--preferencial protocol do be used
+conf.client = "client.lua"		--defines what file will be invoked when the client is called
+conf.server = "srh.lua"			--defines what file will be invoked when the server is called
+conf.proto = "tcp"				--preferencial protocol do be used
+conf.sockMax = 100				--the max number of sockets that may be opened at the same time
+conf.sockCautionTime = 2		--if a socket spent more than this time without being used, be cautious
 
 
 --DO NOT MESS ANYTHING HERE!

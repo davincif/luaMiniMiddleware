@@ -4,9 +4,6 @@ require "invoker"
 srh = {}
 local socks = {}
 
-socks.max = 100 --max of socket that may be opened at the same time
-socks.cautionTime = 2 --if a socket spent more than this time without being used, be cautious
-
 math.randomseed(os.time())
 
 
@@ -122,7 +119,7 @@ function srh.send(strmsg, key, flag)
 	elseif(socks[key] == nil) then
 		bret = false
 		print("LUA: the given key does not exist")
-	elseif((os.time() - socks[key].lastUse > socks.cautionTime) and (lsok.is_socket_open() == false)) then
+	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
 		bret = false
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
 		socks[key] = nil
@@ -224,16 +221,16 @@ function socks.create()
 	local key
 	local count = 0
 
-	key = math.random(socks.max)
-	while(socks[tostring(key)] ~= nil and count <= socks.max) do
+	key = math.random(conf.sockMax)
+	while(socks[tostring(key)] ~= nil and count <= conf.sockMax) do
 		key = key + 1
-		if(key > socks.max) then
+		if(key > conf.sockMax) then
 			key = 1
 		end
 		count = count + 1
 	end
 
-	if(count > socks.max) then
+	if(count > conf.sockMax) then
 		--to many sockets opened
 		key = ""
 		print("LUA: cant open a new socket. There's already too many")
