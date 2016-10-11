@@ -47,7 +47,7 @@ function srh.recv(proto, service)
 					os.exit()
 				end
 
-				bool = lsok.bind(serversocket, "127.0.0.1", 2323)
+				bool = lsok.bind(serversocket, conf.dnsIP, conf.dnsPort)
 				if(bool == false) then
 					print("LUA: Could bind")
 					os.exit()
@@ -72,7 +72,7 @@ function srh.recv(proto, service)
 					os.exit()
 				end
 
-				bool = lsok.bind(serversocket, "127.0.0.1", 2323)
+				bool = lsok.bind(serversocket, conf.dnsIP, conf.dnsPort)
 				if(bool == false) then
 					print("LUA: Could not bind")
 					os.exit()
@@ -97,7 +97,7 @@ function srh.recv(proto, service)
 	return key, sret
 end
 
-function srh.send(strmsg, key, flag)
+function srh.send(strmsg, key, flag, ip, flag)
 --[[
 	parameters:
 		service - who had already requested a send? and now whant to receive the return msg.
@@ -124,13 +124,20 @@ function srh.send(strmsg, key, flag)
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
 		socks[key] = nil
 		--one day we will implement an automatically reopen of the socket
+	elseif(flag == nil) then
+		error("LUA: in srh.recv 3st argument must not be nil")
+	elseif(ip ~= nil and type(ip) ~= "string") then
+		error("LUA: in srh.recv 4st argument must be string, but it's "..type(ip))
+	elseif(port ~= nil and type(port) ~= "number") then
+		error("LUA: in srh.recv 5st argument must be number, but it's "..type(port))
 	else
 		bret = true
 		socktable = socks[key]
 		if(socktable.proto == lsok.proto.tcp) then
 			bytes = lsok.send(socktable.csock, strmsg)
 		elseif(socktable.proto == lsok.proto.udp) then
-			bytes = lsok.send(socktable.ssock, strmsg, "127.0.0.1", 3232)
+			error("LUA: UDP not implemented") --UDP NOT IMPLEMENTED YET
+			bytes = lsok.send(socktable.ssock, strmsg, ip, port)
 		end
 
 		if(flag ~= nil and flag == false) then

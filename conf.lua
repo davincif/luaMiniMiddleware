@@ -8,6 +8,8 @@ conf.server = "srh.lua"			--defines what file will be invoked when the server is
 conf.proto = "tcp"				--preferencial protocol do be used
 conf.sockMax = 100				--the max number of sockets that may be opened at the same time
 conf.sockCautionTime = 2		--if a socket spent more than this time without being used, be cautious
+conf.dnsIP = "127.0.0.1"		--the IP of the DNS server
+conf.dnsPort = 6000				--the port of the DNS server
 
 
 --DO NOT MESS ANYTHING HERE!

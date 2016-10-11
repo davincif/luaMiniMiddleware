@@ -1,18 +1,18 @@
 --[[	CLIENT TO REQUEST HANDLER	]]
 crh = {}
 local socks = {}
-conf.sockMax = 100 --max of socket that may be opened at the same time
-conf.sockCautionTime = 2 --if a socket spent more than this time without being used, be cautious
 
 math.randomseed(os.time())
 
 --	GLOBAL FUNCTIONS	--
-function crh.send(strmsg, proto, service)
+function crh.send(strmsg, proto, service, ip, port)
 --[[
 	parameters:
 		strmsg - string to be sent over the net.
 		proto - the protocol to be used.
 		service - who is requesting this send? Since lua is dynamicly typed, service may be anything you want that identify who is asking this send
+		ip - the ip to send the msg
+		port - the port to send the msg
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 ]]
@@ -22,17 +22,17 @@ function crh.send(strmsg, proto, service)
 	local key
 
 	if(type(proto) ~= "number") then
-		key = ""
-		print("LUA: crh.send 2st argument spected to be number but it's " .. type(proto))
+		error("LUA: crh.send 2st argument spected to be number but it's " .. type(proto))
 	elseif(lsok.is_proto_valid(proto) == false) then
-		key = ""
-		print("LUA: in crh.send, protocol \"" .. proto .. "\" not recognized")
+		error("LUA: in crh.send, protocol \"" .. proto .. "\" not recognized")
 	elseif(type(strmsg) ~= "string") then
-		key = ""
-		print("LUA: crh.send 1st argument spected to be string but it's " .. type(strmsg))
+		error("LUA: crh.send 1st argument spected to be string but it's " .. type(strmsg))
 	elseif(service == nil) then
-		key = ""
-		print("LUA: crh.send 3st argument cant not be nil!")
+		error("LUA: crh.send 3st argument cant not be nil!")
+	elseif(type(ip) ~= "string") then
+		error("LUA: crh.send 4st argument spected to be string but it's " .. type(ip))
+	elseif(type(port) ~= "number") then
+		error("LUA: crh.send 5st argument spected to be number but it's " .. type(port))
 	else
 		key = crh.getkey(service)
 		if(key == "") then
@@ -47,7 +47,7 @@ function crh.send(strmsg, proto, service)
 					os.exit()
 				end
 
-				bool = lsok.connect(clientsocket, "127.0.0.1", 2323)
+				bool = lsok.connect(clientsocket, ip, port)
 				if(bool == false) then
 					print("LAU: Could not connect socket: ", clientsocket)
 					os.exit()
@@ -56,20 +56,21 @@ function crh.send(strmsg, proto, service)
 				bytes = lsok.send(clientsocket, strmsg)
 			elseif(proto == lsok.proto.udp) then
 				--[[	UDP		]]
+				error("LUA: udp not implemented") --UDP NOT IMPLEMENTED
 				clientsocket = lsok.open(lsok.proto.udp)
 				if(clientsocket == 0) then
 					print("LAU: Could not open socket")
 					os.exit()
 				end
 
-				bool = lsok.bind(clientsocket, "127.0.0.1", 3232)
+				bool = lsok.bind(clientsocket, ip, port)
 				if(bool == false) then
 					print("LUA: Could not bind")
 					os.exit()
 				end
 
 
-				bytes = lsok.send(clientsocket, strmsg, "127.0.0.1", 2323)
+				bytes = lsok.send(clientsocket, strmsg, ip, port)
 			end
 
 			socks[key] = {}

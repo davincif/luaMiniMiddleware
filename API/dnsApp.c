@@ -7,7 +7,7 @@
 int main(int argc, char const *argv[])
 {
 	LS_Bool auxb;
-	char *caux, *server;
+	char *caux, *dns;
 	enum LS_PROTO_TYPE proto;
 	void *Lstack; //lua stack, it shall be used only temporarily
 
@@ -18,15 +18,15 @@ int main(int argc, char const *argv[])
 	//getting configurations
 	lua_getglobal(Lstack, "conf");
 
-	//get server file addrs
-	lua_getfield(Lstack, -1, "getServer");
+	//get dns file addrs
+	lua_getfield(Lstack, -1, "getDNS");
 	if(lua_pcall(Lstack, 0, 1, 0) != 0)
-		luaL_error(Lstack, "couldn't run function conf.getServer");
+		luaL_error(Lstack, "couldn't run function conf.getDNS");
 	caux = lua_tostring(Lstack, -1);
-	server = (char*) malloc(sizeof(char)*(strlen(caux)+1));
-	if(server == NULL)
+	dns = (char*) malloc(sizeof(char)*(strlen(caux)+1));
+	if(dns == NULL)
 		luaL_error(Lstack, "lack of memory, sorry");
-	strcpy(server, caux);
+	strcpy(dns, caux);
 	lua_pop(Lstack, 1);
 
 	//getting preferencial protocol
@@ -37,11 +37,11 @@ int main(int argc, char const *argv[])
 	lua_pop(Lstack, 1);
 	Lstack = NULL;
 
-	auxb = ls_run(server);
+	auxb = ls_run(dns);
 	if(auxb != LS_False)
-		printf("Error running lua %s\n", server);
+		printf("Error running lua %s\n", dns);
 
-	free(server);
+	free(dns);
 	ls_close();
 
 	return 0;

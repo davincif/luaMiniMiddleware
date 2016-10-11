@@ -4,9 +4,10 @@ LUALIB= -L ./lua/ -llua -lm -ldl
 INCLUDES=luaAPI.h tcpSocket.h -I lua/
 OBJ=lsAuxLib.o marshaller.o luaAPI.o tcpSocket.o
 
-build: $(OBJ) clientApp.o serverApp.o
+build: $(OBJ) clientApp.o serverApp.o dnsApp.o
 	$(CC) $(CFLAGS) $(OBJ) clientApp.o -o ../clientApp $(LUALIB)
 	$(CC) $(CFLAGS) $(OBJ) serverApp.o -o ../serverApp $(LUALIB)
+	$(CC) $(CFLAGS) $(OBJ) dnsApp.o -o ../dnsApp $(LUALIB)
 	make clean
 
 
@@ -28,8 +29,11 @@ clientApp.o:
 serverApp.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -fPIC -c serverApp.c
 
+dnsApp.o:
+	$(CC) $(CFLAGS) $(INCLUDES) -fPIC -c dnsApp.c
+
 clean:
 	rm -f -v ./*.o ./*.h.gch
 
 remove:
-	rm -f -v ./*.o ./*.h.gch ../clientApp ../serverApp
+	rm -f -v ./*.o ./*.h.gch ../clientApp ../serverApp ../dnsApp

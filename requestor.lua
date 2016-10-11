@@ -2,6 +2,8 @@
 require "crh"
 
 request = {}
+local servt = {} --services table
+servt.echo = {}
 
 function request.echo(strm, proto)
 --[[
@@ -14,6 +16,8 @@ function request.echo(strm, proto)
 	--strm = string msg
 	local skey
 	local sret
+	local ip = "127.0.0.1"
+	local port = 2323
 
 	if(type(strm) ~= "table") then
 		print("request.echo argument spected to be table but it's " .. type(strm))
@@ -23,9 +27,9 @@ function request.echo(strm, proto)
 		sret = ""
 	else
 		if(proto == nil) then
-			skey = crh.send(strm.service .."("..strm.load..")", conf.proto, request.echo)
+			skey = crh.send(strm.service .."("..strm.load..")", conf.proto, request.echo, ip, port)
 		else
-			skey = crh.send(strm.service .."("..strm.load..")", proto, request.echo)
+			skey = crh.send(strm.service .."("..strm.load..")", proto, request.echo, ip, port)
 		end
 
 		if(skey ~= "") then

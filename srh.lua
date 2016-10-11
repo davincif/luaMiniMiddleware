@@ -8,11 +8,13 @@ math.randomseed(os.time())
 
 
 --	GLOBAL FUNCTIONS	--
-function srh.recv(proto, service)
+function srh.recv(proto, service, ip, port)
 --[[
 	parameters:
 		proto - the protocol to be used.
 		service - who is requesting this recv? Since lua is dynamicly typed, service may be anything you want that identify who is asking this recv
+		ip - the ip to bind the socket
+		port - the port to bind the socket
 	return:
 		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 		msg - the msg (string) sent by the client, or an empty string if there is any error
@@ -26,13 +28,9 @@ function srh.recv(proto, service)
 	local sret
 
 	if(type(proto) ~= "number") then
-		key = ""
-		sret = ""
-		print("srh.recv 1st argument spected to be number but it's " .. type(proto))
+		error("srh.recv 1st argument spected to be number but it's " .. type(proto))
 	elseif(lsok.is_proto_valid(proto) == false) then
-		key = ""
-		sret = ""
-		print("in srh.recv, protocol \"" .. proto .. "\" not recognized")
+		error("in srh.recv, protocol \"" .. proto .. "\" not recognized")
 	else
 		key = srh.getkey(service)
 		if(key == "") then
@@ -47,7 +45,7 @@ function srh.recv(proto, service)
 					os.exit()
 				end
 
-				bool = lsok.bind(serversocket, "127.0.0.1", 2323)
+				bool = lsok.bind(serversocket, ip, port)
 				if(bool == false) then
 					print("LUA: Could bind")
 					os.exit()
@@ -72,7 +70,7 @@ function srh.recv(proto, service)
 					os.exit()
 				end
 
-				bool = lsok.bind(serversocket, "127.0.0.1", 2323)
+				bool = lsok.bind(serversocket, ip, port)
 				if(bool == false) then
 					print("LUA: Could not bind")
 					os.exit()
@@ -97,7 +95,7 @@ function srh.recv(proto, service)
 	return key, sret
 end
 
-function srh.send(strmsg, key, flag)
+function srh.send(strmsg, key, flag, ip, port)
 --[[
 	parameters:
 		service - who had already requested a send? and now whant to receive the return msg.
@@ -111,26 +109,30 @@ function srh.send(strmsg, key, flag)
 	local bytes
 
 	if(type(strmsg) ~= "string") then
-		bret = false
-		print("LUA: in srh.recv 1st argument must be a key string, but it's "..type(key))
+		error("LUA: in srh.recv 1st argument must be string, but it's "..type(strmsg))
 	elseif(key == nil or type(key) ~= "string") then
-		bret = false
-		print("LUA: in srh.recv 2st argument must be a key string, but it's "..type(key))
+		error("LUA: in srh.recv 2st argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
-		bret = false
-		print("LUA: the given key does not exist")
+		error("LUA: the given key does not exist")
 	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
 		bret = false
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
 		socks[key] = nil
 		--one day we will implement an automatically reopen of the socket
+	elseif(flag == nil) then
+		error("LUA: in srh.recv 3st argument must not be nil")
+	elseif(ip ~= nil and type(ip) ~= "string") then
+		error("LUA: in srh.recv 4st argument must be string, but it's "..type(ip))
+	elseif(port ~= nil and type(port) ~= "number") then
+		error("LUA: in srh.recv 5st argument must be number, but it's "..type(port))
 	else
 		bret = true
 		socktable = socks[key]
 		if(socktable.proto == lsok.proto.tcp) then
 			bytes = lsok.send(socktable.csock, strmsg)
 		elseif(socktable.proto == lsok.proto.udp) then
-			bytes = lsok.send(socktable.ssock, strmsg, "127.0.0.1", 3232)
+			error("LUA: UDP not implemented") --UDP NOT IMPLEMENTED YET
+			bytes = lsok.send(socktable.ssock, strmsg, ip, port)
 		end
 
 		if(flag ~= nil and flag == false) then
@@ -244,12 +246,15 @@ end
 --[[	RUNNING SERVER	]]
 local sockgate
 local scmd --scmd = string command
+local ip = "127.0.0.1"
+local port = 2323
 
-sockgate, scmd  = srh.recv(conf.proto, "watcher") --socket where the requisition will get from client
+sockgate, scmd  = srh.recv(conf.proto, "watcher", ip, port) --socket where the requisition will get from client
 
 if(sockgate == "") then
 	print("LUA: srh.lua could'n create the listener socket")
 	os.exit()
 end
 
-srh.send(invok.invoker(scmd), sockgate, true)
+--srh.send(invok.invoker(scmd), sockgate, true) --tcp
+srh.send(invok.invoker(scmd), sockgate, true, ip, port) --udp

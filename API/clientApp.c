@@ -39,7 +39,7 @@ int main(int argc, char const *argv[])
 
 	auxb = ls_run(client);
 	if(auxb != LS_False)
-		printf("Error running lua luaClient.lua\n");
+		printf("Error running lua %s\n", client);
 
 	free(client);
 	ls_close();
