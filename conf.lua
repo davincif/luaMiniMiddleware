@@ -5,11 +5,13 @@ conf = {}
 --	EDIT THIS SECTION AT YOUR WILL	--
 conf.client = "client.lua"		--defines what file will be invoked when the client is called
 conf.server = "srh.lua"			--defines what file will be invoked when the server is called
+conf.dns = "drh.lua"			--defines what file will be invoked when the dns is called
 conf.proto = "tcp"				--preferencial protocol do be used
 conf.sockMax = 100				--the max number of sockets that may be opened at the same time
 conf.sockCautionTime = 2		--if a socket spent more than this time without being used, be cautious
 conf.dnsIP = "127.0.0.1"		--the IP of the DNS server
 conf.dnsPort = 6000				--the port of the DNS server
+conf.dnsNotFound = "not found"	--the msg received when the requested service is not registered at the dns service
 
 
 --DO NOT MESS ANYTHING HERE!
@@ -27,6 +29,10 @@ end
 
 function conf.getServer()
 	return conf.server
+end
+
+function conf.getDNS()
+	return conf.dns
 end
 
 function conf.getProto()

@@ -16,8 +16,7 @@ function cproxy.echo(str)
 	local msg
 
 	if(type(str) ~= "string") then
-		print("cproxy.echo argument spected to be string but it's " .. type(str))
-		sret = ""
+		error("cproxy.echo argument spected to be string but it's " .. type(str))
 	else
 		msg = {}
 		msg.service = "ECHO"

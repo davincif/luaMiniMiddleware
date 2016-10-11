@@ -8,7 +8,7 @@ math.randomseed(os.time())
 
 
 --	GLOBAL FUNCTIONS	--
-function srh.recv(proto, service)
+function drh.recv(proto, service)
 --[[
 	parameters:
 		proto - the protocol to be used.
@@ -28,13 +28,13 @@ function srh.recv(proto, service)
 	if(type(proto) ~= "number") then
 		key = ""
 		sret = ""
-		print("srh.recv 1st argument spected to be number but it's " .. type(proto))
+		print("drh.recv 1st argument spected to be number but it's " .. type(proto))
 	elseif(lsok.is_proto_valid(proto) == false) then
 		key = ""
 		sret = ""
-		print("in srh.recv, protocol \"" .. proto .. "\" not recognized")
+		print("in drh.recv, protocol \"" .. proto .. "\" not recognized")
 	else
-		key = srh.getkey(service)
+		key = drh.getkey(service)
 		if(key == "") then
 			key = socks.create()
 		end
@@ -97,7 +97,7 @@ function srh.recv(proto, service)
 	return key, sret
 end
 
-function srh.send(strmsg, key, flag, ip, flag)
+function drh.send(strmsg, key, flag, ip, port)
 --[[
 	parameters:
 		service - who had already requested a send? and now whant to receive the return msg.
@@ -109,13 +109,12 @@ function srh.send(strmsg, key, flag, ip, flag)
 	local bret
 	local bool
 	local bytes
-
 	if(type(strmsg) ~= "string") then
 		bret = false
-		print("LUA: in srh.recv 1st argument must be a key string, but it's "..type(key))
+		print("LUA: in drh.recv 1st argument must be a key string, but it's "..type(key))
 	elseif(key == nil or type(key) ~= "string") then
 		bret = false
-		print("LUA: in srh.recv 2st argument must be a key string, but it's "..type(key))
+		print("LUA: in drh.recv 2st argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
 		bret = false
 		print("LUA: the given key does not exist")
@@ -125,11 +124,11 @@ function srh.send(strmsg, key, flag, ip, flag)
 		socks[key] = nil
 		--one day we will implement an automatically reopen of the socket
 	elseif(flag == nil) then
-		error("LUA: in srh.recv 3st argument must not be nil")
+		error("LUA: in drh.recv 3st argument must not be nil")
 	elseif(ip ~= nil and type(ip) ~= "string") then
-		error("LUA: in srh.recv 4st argument must be string, but it's "..type(ip))
+		error("LUA: in drh.recv 4st argument must be string, but it's "..type(ip))
 	elseif(port ~= nil and type(port) ~= "number") then
-		error("LUA: in srh.recv 5st argument must be number, but it's "..type(port))
+		error("LUA: in drh.recv 5st argument must be number, but it's "..type(port))
 	else
 		bret = true
 		socktable = socks[key]
@@ -161,7 +160,7 @@ function srh.send(strmsg, key, flag, ip, flag)
 	return bret
 end
 
-function srh.getkey(service)
+function drh.getkey(service)
 --[[
 	parameters:
 		service - the service that has already opened a socket that you wish to look for
@@ -179,7 +178,7 @@ function srh.getkey(service)
 	return skey
 end
 
-function srh.close(service)
+function drh.close(service)
 --[[
 	parameters:
 		service - the service whose socket shall be closed
@@ -252,11 +251,12 @@ end
 local sockgate
 local scmd --scmd = string command
 
-sockgate, scmd  = srh.recv(conf.proto, "watcher") --socket where the requisition will get from client
+sockgate, scmd  = drh.recv(conf.proto, "watcher") --socket where the requisition will get from client
 
 if(sockgate == "") then
-	print("LUA: srh.lua could'n create the listener socket")
+	print("LUA: drh.lua could'n create the listener socket")
 	os.exit()
 end
 
-srh.send(invok.invoker(scmd), sockgate, true)
+print("drh recebeu: "..scmd)
+drh.send("(127.0.0.1,2323)", sockgate, true) --testline

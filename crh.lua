@@ -98,11 +98,9 @@ function crh.recv(key, flag)
 	local sret
 
 	if(key == nil or type(key) ~= "string") then
-		sret = ""
-		print("LUA: in crh.recv 1st argument must be a key string")
+		error("LUA: in crh.recv 1st argument must be a key string")
 	elseif(socks[key] == nil) then
-		sret = ""
-		print("LUA: the given key does not exist")
+		error("LUA: the given key does not exist")
 	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
 		sret = ""
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
