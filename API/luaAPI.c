@@ -392,6 +392,7 @@ static int socket_recv()
 		default:
 			msglen = atoi(msg_size);
 			msg = (char*) malloc(sizeof(char)*(msglen+1));
+			msg[msglen] = '\0';
 			if(msg == NULL)
 				luaL_error(LCS, "Couldn't alloc memory to sotore msg!");
 
