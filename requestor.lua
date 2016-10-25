@@ -1,8 +1,8 @@
 --[[	REQUESTOR	]]
+require "lookup"
 require "crh"
 
 request = {}
-local serv = {} --services
 
 function request.echo(strm, proto)
 --[[
@@ -23,7 +23,7 @@ function request.echo(strm, proto)
 	elseif(proto ~= nil and lsok.is_proto_valid(proto) == false) then
 		error("request.echo 2st argument, proto, not recognized")
 	else
-		ip, port = serv.get("echo")
+		ip, port = lookup.search("echo")
 		if(ip == conf.dnsNotFoun or port == conf.dnsNotFoun) then
 			sret = ""
 			print("request.echo 'echo' service not found at the server")
@@ -41,44 +41,4 @@ function request.echo(strm, proto)
 	end
 
 	return sret
-end
-
-function serv.get(service)
-	local ip
-	local port
-
-	if(type(service) ~= "string") then
-		error("LUA: serv.get 1st argument spected to be string but it's " .. type(service))
-	else
-		if(serv[service] == nil) then
-			local skey
-			local si, sf
-			
-			serv[service] = {}
-			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
-			serv[service][1] = {}
-
-			skey = crh.send("SEARCH("..service..")", conf.proto, request.echo, conf.dnsIP, conf.dnsPort)
-			skey = crh.recv(skey, true)
-			print("service \"" ..service.."\" on server "..skey) --testline
-
-			si = string.find(skey, "%(")
-			sf = string.find(skey, ",")
-			ip = string.sub(skey, si+1, sf-1)
-			si = string.find(skey, ")")
-			port = tonumber(string.sub(skey, sf+1, si-1))
-		else
-			local aux
-
-			if(serv[service].qtd > 1) then
-				aux = math.random(1, serv[service].qtd)
-			else
-				aux = 1
-			end
-			ip = serv[service][aux].ip
-			port = serv[service][aux].port
-		end
-	end
-
-	return ip, port
 end

@@ -17,7 +17,6 @@ function drh.recv(proto, service)
 		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 		msg - the msg (string) sent by the client, or an empty string if there is any error
 ]]
-	local sret
 	local serversocket
 	local clientsocket
 	local bool
@@ -111,10 +110,10 @@ function drh.send(strmsg, key, flag, ip, port)
 	local bytes
 	if(type(strmsg) ~= "string") then
 		bret = false
-		print("LUA: in drh.recv 1st argument must be a key string, but it's "..type(key))
+		print("LUA: in drh.send 1st argument must be a key string, but it's "..type(key))
 	elseif(key == nil or type(key) ~= "string") then
 		bret = false
-		print("LUA: in drh.recv 2st argument must be a key string, but it's "..type(key))
+		print("LUA: in drh.send 2st argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
 		bret = false
 		print("LUA: the given key does not exist")
@@ -124,11 +123,11 @@ function drh.send(strmsg, key, flag, ip, port)
 		socks[key] = nil
 		--one day we will implement an automatically reopen of the socket
 	elseif(flag == nil) then
-		error("LUA: in drh.recv 3st argument must not be nil")
+		error("LUA: in drh.send 3st argument must not be nil")
 	elseif(ip ~= nil and type(ip) ~= "string") then
-		error("LUA: in drh.recv 4st argument must be string, but it's "..type(ip))
+		error("LUA: in drh.send 4st argument must be string, but it's "..type(ip))
 	elseif(port ~= nil and type(port) ~= "number") then
-		error("LUA: in drh.recv 5st argument must be number, but it's "..type(port))
+		error("LUA: in drh.send 5st argument must be number, but it's "..type(port))
 	else
 		bret = true
 		socktable = socks[key]
@@ -260,3 +259,4 @@ end
 
 print("drh recebeu: "..scmd)
 drh.send("(127.0.0.1,2323)", sockgate, true) --testline
+--drh.send(conf.dnsOk, sockgate, true) --testline

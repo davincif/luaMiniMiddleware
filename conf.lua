@@ -11,7 +11,8 @@ conf.sockMax = 100				--the max number of sockets that may be opened at the same
 conf.sockCautionTime = 2		--if a socket spent more than this time without being used, be cautious
 conf.dnsIP = "127.0.0.1"		--the IP of the DNS server
 conf.dnsPort = 6000				--the port of the DNS server
-conf.dnsNotFound = "not found"	--the msg received when the requested service is not registered at the dns service
+conf.dnsNotFound = "not found"	--the msg received when the requested service is not registered at the dns
+conf.dnsOk = "ok"				--the msg received when the requested service at the dns was performed successfully
 
 
 --DO NOT MESS ANYTHING HERE!

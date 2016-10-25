@@ -1,6 +1,5 @@
 --[[	CLIENT PROXY	]]
 require "requestor"
-require "lookup"
 
 cproxy = {}
 cproxy.proto = lsok.proto.tcp -- preferencial protocol to be used, TCP by pattern.
