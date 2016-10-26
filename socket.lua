@@ -102,7 +102,7 @@ function gsh.accept(key)
 		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
 		error("LUA: gsh.accept the given key is not valid, \"key\" is "..type(socks[key]))
-	elseif(socks[key].mysock ~= nil) then
+	elseif(socks[key].mysock == nil) then
 		error("LUA: the socket needs to be set first")
 	else
 		ok = true
@@ -386,7 +386,7 @@ function gsh.isSetted(key)
 	if(socks[key] == nil or type(socks[key]) ~= "table") then
 		ret = false
 	else
-		if(socks[key].mysock ~= nil) then
+		if(socks[key].mysock == nil) then
 			ret = false
 		else
 			ret = true

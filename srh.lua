@@ -16,7 +16,6 @@ function srh.send(strmsg, key, proto, ip, port)
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 ]]
 	local bytes
-	local key
 
 	--do not check all the parameters because the functions in socket.lua already do it
 
