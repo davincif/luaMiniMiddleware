@@ -1,12 +1,23 @@
 --[[	GENERIC SOCKET HANDLER	]]
 gsh = {}
 local socks = {}
+--[[
+socks[key] = {}
+socks[key].mysock = socket created when lsok.open() is called
+if(proto == lsok.proto.tcp) then
+	--socks[key].csock = future client sock
+	socks[key].active = false --says if this socket already was accept, ou connecto to another one.
+end
+socks[key].proto = tcp ou udp ~up to now~
+socks[key].openedAt = os.time()
+socks[key].lastUse = socks[key].openedAt
+]]
 
 math.randomseed(os.time())
 
 
 --	GLOBAL FUNCTIONS	--
-function gsh.setsock(proto, key, ip, port)
+function gsh.set(proto, key, ip, port)
 --[[
 	parameters:
 		proto - the protocol to be used.
@@ -14,73 +25,68 @@ function gsh.setsock(proto, key, ip, port)
 		ip - the ip to bind the socket
 		port - the port to bind the socket
 	return:
-		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
+		true on success, false otherwise
 ]]
-	local sret
 	local mysocket
 	local bool
 	local bytes
-	local key
-	local sret
+	local ok = false
 
 	if(type(proto) ~= "number") then
-		error("gsh.setsock 1st argument spected to be number but it's " .. type(proto))
+		error("gsh.set 1st argument spected to be number but it's " .. type(proto))
 	elseif(lsok.is_proto_valid(proto) == false) then
-		error("in gsh.setsock, protocol \"" .. proto .. "\" not recognized")
+		error("in gsh.set, protocol \"" .. proto .. "\" not recognized")
 	elseif(type(ip) ~= "string") then
-		error("LUA: gsh.setsock 4st argument spected to be string but it's " .. type(ip))
+		error("LUA: gsh.set 4st argument spected to be string but it's " .. type(ip))
 	elseif(type(port) ~= "number") then
-		error("LUA: gsh.setsock 5st argument spected to be number but it's " .. type(port))
-	else if(type(key) ~= "string") then
-		error("LUA: gsh.setsock 2st argument spected to be string but it's " .. type(key))
-	else if(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, socks["..key.."] is "..type(socks[key]))
+		error("LUA: gsh.set 5st argument spected to be number but it's " .. type(port))
+	elseif(type(key) ~= "string") then
+		error("LUA: gsh.set 2st argument spected to be string but it's " .. type(key))
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: the given key is not valid, key is "..type(socks[key]))
 	else
-		if(key ~= "") then
-			if(proto == lsok.proto.tcp) then
-				--[[	TCP		]]
-				mysocket = lsok.open(lsok.proto.tcp)
-				if(mysocket == 0) then
-					error("LUA: Could not open socket")
-				end
-
-				bool = lsok.bind(mysocket, ip, port)
-				if(bool == false) then
-					error("LUA: Could not bind")
-				end
-
-				bool = lsok.listen(mysocket)
-				if(bool == false) then
-					error("LUA: Could not listen")
-				end
-			elseif(proto == lsok.proto.udp) then
-				--[[	UDP		]]
-				mysocket = lsok.open(lsok.proto.udp)
-				if(mysocket == 0) then
-					error("LUA: Could not open socket")
-				end
-
-				bool = lsok.bind(mysocket, ip, port)
-				if(bool == false) then
-					error("LUA: Could not bind")
-				end
+		ok = true
+		if(proto == lsok.proto.tcp) then
+			--[[	TCP		]]
+			mysocket = lsok.open(lsok.proto.tcp)
+			if(mysocket == 0) then
+				error("LUA: Could not open socket")
 			end
 
-			socks[key] = {}
-			local taux = socks[key]
-			taux.mysock = mysocket
-			if(proto == lsok.proto.tcp) then
-				--taux.csock = future client sock
-				taux.ip = ip
-				taux.port = port
+			bool = lsok.bind(mysocket, ip, port)
+			if(bool == false) then
+				error("LUA: Could not bind")
 			end
-			taux.proto = proto
-			taux.openedAt = os.time()
-			taux.lastUse = taux.openedAt
+
+			bool = lsok.listen(mysocket)
+			if(bool == false) then
+				error("LUA: Could not listen")
+			end
+		elseif(proto == lsok.proto.udp) then
+			--[[	UDP		]]
+			mysocket = lsok.open(lsok.proto.udp)
+			if(mysocket == 0) then
+				error("LUA: Could not open socket")
+			end
+
+			bool = lsok.bind(mysocket, ip, port)
+			if(bool == false) then
+				error("LUA: Could not bind")
+			end
 		end
+
+		socks[key] = {}
+		local taux = socks[key]
+		taux.mysock = mysocket
+		if(proto == lsok.proto.tcp) then
+			taux.active = false --says if this socket already was accept, ou connecto to another one.
+		end
+		taux.proto = proto
+		taux.openedAt = os.time()
+		taux.lastUse = taux.openedAt
 	end
 
-	return key	
+	return ok	
 end
 
 function gsh.accept(key)
@@ -94,12 +100,9 @@ function gsh.accept(key)
 
 	if(type(key) ~= "string") then
 		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
-	else if(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, socks["..key.."] is "..type(socks[key]))
-	else if(socks[key].proto ~= lsok.proto.tcp) then
-		print("LUA: only tcp protocol needs to accept")
-		ok = false
-	else if(socks[key].mysock ~= nil) then
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+	elseif(socks[key].mysock ~= nil) then
 		error("LUA: the socket needs to be set first")
 	else
 		ok = true
@@ -107,6 +110,7 @@ function gsh.accept(key)
 		if(socks[key].csock == -1) then
 			error("LUA: gsh.accept, could not accept connection")
 		end
+		socks[key].active = true
 	end
 
 	return ok
@@ -125,9 +129,9 @@ function gsh.connect(key, ip, port)
 
 	if(type(key) ~= "string") then
 		error("LUA: gsh.connect 1st argument spected to be string but it's " .. type(key))
-	else if(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, socks["..key.."] is "..type(socks[key]))
-	else if(socks[key].proto ~= lsok.proto.tcp) then
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+	elseif(socks[key].proto ~= lsok.proto.tcp) then
 		print("LUA: only tcp protocol needs to connect")
 		ok = false
 	else
@@ -135,165 +139,102 @@ function gsh.connect(key, ip, port)
 		if(lsok.connect(socks[key].mysock, ip, port) == false) then
 			error("LAU: Could not connect socket")
 		end
+		socks[key].active = true
 	end
 
 	return ok
 end
 
-function gsh.recv(key)
+function gsh.recv(key, flag)
 --[[
 	parameters:
-		proto - the protocol to be used.
-		service - who is requesting this recv? Since lua is dynamicly typed, service may be anything you want that identify who is asking this recv
-		ip - the ip to bind the socket
-		port - the port to bind the socket
+		key - the key to an valid already created, setted and accepted/connect socket
+		flag - pas true to delete this socket after use, false other while (or leave it nil!!)
 	return:
-		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 		msg - the msg (string) sent by the client, or an empty string if there is any error
+
+	PS.: to save time, this function will not check if the socket is correctly setted, so, be sure of if before trying to send
 ]]
 	local sret
 
-	if(key == nil or type(key) ~= "string") then
-		error("LUA: in gsh.recv 2st argument must be a key string, but it's "..type(key))
-	elseif(socks[key] == nil) then
-		error("in gsh.recv, protocol \"" .. proto .. "\" not recognized")
+	if(type(key) ~= "string") then
+		error("LUA: gsh.recv 1st argument spected to be string but it's " .. type(key))
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
 	else
 		if(socks[key].proto == lsok.proto.tcp) then
 			--[[	TCP		]]
-			if(socks[key].csock == nil) then
-				socks[key].csock = lsok.accept(socks[key].mysock)
-				if(socks[key].csock == -1) then
-					error("LUA: gsh.recv, could not accept connection")
-				end
-			end
 			sret = lsok.recv(socks[key].csock, socks[key].proto)
 		elseif(socks[key].proto == lsok.proto.udp) then
 			--[[	UDP		]]
-			sret = lsok.recv(socks[key].socks, socks[key].proto)
+			sret = lsok.recv(socks[key].mysock, socks[key].proto)
+		end
+
+		if(flag ~= nil and flag == true) then
+			gsh.close(key)
+		else
+			socks[key].lastUse = os.time()
 		end
 	end
 
 	return sret
 end
 
-function gsh.send(strmsg, key, flag)
+function gsh.send(strmsg, key, flag, ip, port)
 --[[
 	parameters:
 		service - who had already requested a send? and now whant to receive the return msg.
-		flag - pas true to delete this socket after use if the service wont the socket anymore.
+		key - the key to an valid already created, setted and accepted/connect socket
+		flag - pas true to delete this socket after use, false other while (or leave it nil!!)
+		ip - if you're using a udp, you must pass the ip to send the msg. ignore it if you're use tcp
+		port - if you're using a udp, you must pass the port to send the msg. ignore it if you're use tcp
+		PS.: when using udp, never ignore the "flag", put it false, if you do not want to use it.
 	return:
-		on success returns true, false otherwise.
+		on success returns the number of bytes sent, -1 ou 0 otherwise.
+
+	PS.: to save time, this function will not check if the socket is correctly setted, so, be sure of if before trying to send
 ]]
-	local socktable
-	local bret
 	local bool
 	local bytes
 
 	if(type(strmsg) ~= "string") then
 		error("LUA: in gsh.send 1st argument must be string, but it's "..type(strmsg))
 	elseif(key == nil or type(key) ~= "string") then
-		error("LUA: in gsh.send 2st argument must be a key string, but it's "..type(key))
+		error("LUA: in gsh.send 2nd argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
 		error("LUA: the given key does not exist")
 	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
-		bret = false
+		bytes = -1
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
 		socks[key] = nil
 		--one day we will implement an automatically reopen of the socket
-	elseif(flag == nil) then
-		error("LUA: in gsh.send 3st argument must not be nil")
+	elseif(flag ~= nil and type(flag) ~= "boolean") then
+		error("LUA: in gsh.send ignore the 3nd argument, or is must be boolean, got "..type(flag))
+	elseif(ip ~= nil and type(ip) ~= "string") then
+		error("LUA: in gsh.send ignore the 4th argument, or is must be string, got "..type(ip))
+	elseif(port ~= nil and type(port) ~= "number") then
+		error("LUA: in gsh.send ignore the 5th argument, or is must be number, got "..type(port))
 	else
-		bret = true
-		socktable = socks[key]
-		if(socktable.proto == lsok.proto.tcp) then
-			bytes = lsok.send(socktable.csock, strmsg)
-		elseif(socktable.proto == lsok.proto.udp) then
-			error("LUA: UDP not implemented") --UDP NOT IMPLEMENTED YET
-			bytes = lsok.send(socktable.mysock, strmsg, socktable.ip, socktable.port)
+		if(socks[key].proto == lsok.proto.tcp) then
+			bytes = lsok.send(socks[key].csock, strmsg)
+		elseif(socks[key].proto == lsok.proto.udp) then
+			bytes = lsok.send(socks[key].mysock, strmsg, ip, port)
 		end
 
-		if(flag ~= nil and flag == false) then
-			bool = lsok.close(socktable.mysock)
-			if(bool == false) then
-				print("LUA: Could not close socket: ", serversocket)
-			end
-			if(socktable.csock ~= nil) then
-				bool = lsok.close(socktable.csock)
-				if(bool == false) then
-					print("LUA: Could not close socket: ", clientsocket)
-				end
-			end
-			socktable = nil
-			socks[key] = nil
+		if(flag ~= nil and flag == true) then
+			gsh.close(key)
 		else
-			socktable.lastUse = os.time()
+			socks[key].lastUse = os.time()
 		end
 	end
 
-	return bret
+	return bytes
 end
 
-function gsh.getkey(service)
---[[
-	parameters:
-		service - the service that has already opened a socket that you wish to look for
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-]]
-	local skey = ""
-
-	for key,value in pairs(socks) do
-		if(type(value) == "table" and type(value.service) ~= nil and value.service == service) then
-			skey = key
-		end
-	end
-
-	return skey
-end
-
-function gsh.close(service)
---[[
-	parameters:
-		service - the service whose socket shall be closed
-	return:
-		on success the return true, false otherwise.
-]]
-	local ok = false
-	local skey
-	local bool
-
-	for key,value in pairs(socks) do
-		if(type(value) == "table" and type(value.service) ~= nil and value.service == service) then
-			ok = true
-			skey = key
-		end
-	end
-
-	if(ok == false) then
-		print("LUA: no socket found to this service")
-	else
-		bool = lsok.close(socks[skey].mysock)
-		if(bool == false) then
-			print("LAU: Could not close socket: ", socks[skey].mysock)
-		end
-		if(socks[skey].csock ~= nil) then
-			bool = lsok.close(socks[skey].csock)
-			if(bool == false) then
-				print("LAU: Could not close socket: ", socks[skey].csock)
-			end
-		end
-		socks[skey] = nil
-	end
-
-	return ok
-end
-
-
---	LOCAL FUNCTIONS	--
 function gsh.create()
 --[[
 	parameters:
-		any
+		none
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 ]]
@@ -320,18 +261,135 @@ function gsh.create()
 	return key
 end
 
---[[	RUNNING SERVER	]]
-local sockgate
-local scmd --scmd = string command
+function gsh.close(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		true on success, false otherwise.
+]]
+	local bool
 
-regT.checkRegistration()
+	if(type(key) ~= "string") then
+		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+	else
+		bool = lsok.close(socks[key].mysock)
+		if(bool == false) then
+			print("LUA: Could not close socket: "..socks[key].mysock.." on key: "..key)
+		end
+		if(socks[key].csock ~= nil) then
+			bool = lsok.close(socks[key].csock)
+			if(bool == false) then
+				print("LUA: Could not close socket: "..socks[key].csock.." on key: "..key)
+			end
+		end
+		socks[key] = nil
+	end
 
-sockgate = gsh.setsock(conf.proto, "watcher", SERVER_IP, 2323)
-scmd  = gsh.recv(sockgate) --socket where the requisition will get from client
-
-if(sockgate == "") then
-	print("LUA: gsh.lua could'n create the listener socket")
-	os.exit()
+	return bool
 end
 
-gsh.send(invok.invoker(scmd), sockgate, true) --tcp
+function gsh.closeAll()
+--[[
+	parameters:
+		none
+	return:
+		true on success, false otherwise.
+]]
+	local bool
+
+	for key,value in pairs(socks) do
+		if(type(value) == "table") then
+			bool = lsok.close(value.mysock)
+			if(bool == false) then
+				print("LUA: Could not close socket: "..value.mysock.." on key: "..key)
+				break
+			end
+			if(value.csock ~= nil) then
+				bool = lsok.close(value.csock)
+				if(bool == false) then
+					print("LUA: Could not close socket: "..value.csock.." on key: "..key)
+					break
+				end
+			end
+			socks[key] = nil
+		end
+	end
+
+	return bool
+end
+
+
+
+--	GET FUNCTIONS	--
+function gsh.getProto(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		the proto of the given socket[key] on success, nil otherwise
+]]
+	local ret
+
+	if(type(key) ~= "string") then
+		error("LUA: gsh.getProto 1st argument spected to be string but it's " .. type(key))
+	end
+
+	if(socks[key] == nil or type(socks[key]) ~= "table") then
+		ret = nil
+	else
+		ret = socks[key].proto
+	end
+
+	return ret
+end
+
+function gsh.isActive(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		true if the socket was already binded or accepted, false otherwise
+]]
+	local ret
+
+	if(type(key) ~= "string") then
+		error("LUA: gsh.isActive 1st argument spected to be string but it's " .. type(key))
+	end
+
+	if(socks[key] == nil or type(socks[key]) ~= "table") then
+		ret = false
+	else
+		ret = socks[key].active
+	end
+
+	return ret
+end
+
+function gsh.isSetted(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		true if the socket was already setted, false otherwise
+]]
+	local ret
+
+	if(type(key) ~= "string") then
+		error("LUA: gsh.isActive 1st argument spected to be string but it's " .. type(key))
+	end
+
+	if(socks[key] == nil or type(socks[key]) ~= "table") then
+		ret = false
+	else
+		if(socks[key].mysock ~= nil) then
+			ret = false
+		else
+			ret = true
+		end
+	end
+
+	return ret
+end
