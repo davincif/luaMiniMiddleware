@@ -1,288 +1,85 @@
 --[[	SERVER TO REQUEST HANDLER	]]
 require "invoker"
+require "socket"
 
 srh = {}
-local socks = {}
 
-math.randomseed(os.time())
-
-
---	GLOBAL FUNCTIONS	--
-function srh.setsock(proto, service, ip, port)
+function srh.send(strmsg, key, proto, ip, port)
 --[[
 	parameters:
-		proto - the protocol to be used.
-		service - who is requesting this recv? Since lua is dynamicly typed, service may be anything you want that identify who is asking this recv
-		ip - the ip to bind the socket
-		port - the port to bind the socket
-	return:
-		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-]]
-	local sret
-	local serversocket
-	local clientsocket
-	local bool
-	local bytes
-	local key
-	local sret
-
-	if(type(proto) ~= "number") then
-		error("srh.setsock 1st argument spected to be number but it's " .. type(proto))
-	elseif(lsok.is_proto_valid(proto) == false) then
-		error("in srh.setsock, protocol \"" .. proto .. "\" not recognized")
-	elseif(type(ip) ~= "string") then
-		error("LUA: srh.setsock 4st argument spected to be string but it's " .. type(ip))
-	elseif(type(port) ~= "number") then
-		error("LUA: srh.setsock 5st argument spected to be number but it's " .. type(port))
-	else
-		key = srh.getkey(service)
-		if(key == "") then
-			key = socks.create()
-		end
-		if(key ~= "") then
-			if(proto == lsok.proto.tcp) then
-				--[[	TCP		]]
-				serversocket = lsok.open(lsok.proto.tcp)
-				if(serversocket == 0) then
-					print("LUA: Could not open socket")
-					os.exit()
-				end
-
-				bool = lsok.bind(serversocket, ip, port)
-				if(bool == false) then
-					print("LUA: Could bind")
-					os.exit()
-				end
-
-				bool = lsok.listen(serversocket)
-				if(bool == false) then
-					os.exit()
-				end
-			elseif(proto == lsok.proto.udp) then
-				--[[	UDP		]]
-				serversocket = lsok.open(lsok.proto.udp)
-				if(serversocket == 0) then
-					print("LUA: Could not open socket")
-					os.exit()
-				end
-
-				bool = lsok.bind(serversocket, ip, port)
-				if(bool == false) then
-					print("LUA: Could not bind")
-					os.exit()
-				end
-			end
-
-			socks[key] = {}
-			local taux = socks[key]
-			taux.ssock = serversocket
-			if(proto == lsok.proto.tcp) then
-				--taux.csock = future client sock
-				taux.ip = ip
-				taux.port = port
-			end
-			taux.proto = proto
-			taux.service = service
-			taux.openedAt = os.time()
-			taux.lastUse = taux.openedAt
-		end
-	end
-
-	return key	
-end
-
-function srh.recv(key)
---[[
-	parameters:
-		proto - the protocol to be used.
-		service - who is requesting this recv? Since lua is dynamicly typed, service may be anything you want that identify who is asking this recv
-		ip - the ip to bind the socket
-		port - the port to bind the socket
-	return:
-		key - on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-		msg - the msg (string) sent by the client, or an empty string if there is any error
-]]
-	local sret
-
-	if(key == nil or type(key) ~= "string") then
-		error("LUA: in srh.recv 2st argument must be a key string, but it's "..type(key))
-	elseif(socks[key] == nil) then
-		error("in srh.recv, protocol \"" .. proto .. "\" not recognized")
-	else
-		if(socks[key].proto == lsok.proto.tcp) then
-			--[[	TCP		]]
-			if(socks[key].csock == nil) then
-				socks[key].csock = lsok.accept(socks[key].ssock)
-				if(socks[key].csock == -1) then
-					error("LUA: srh.recv, could not accept connection")
-				end
-			end
-			sret = lsok.recv(socks[key].csock, socks[key].proto)
-		elseif(socks[key].proto == lsok.proto.udp) then
-			--[[	UDP		]]
-			sret = lsok.recv(socks[key].socks, socks[key].proto)
-		end
-	end
-
-	return sret
-end
-
-function srh.send(strmsg, key, flag)
---[[
-	parameters:
-		service - who had already requested a send? and now whant to receive the return msg.
-		flag - pas true to delete this socket after use if the service wont the socket anymore.
-	return:
-		on success returns true, false otherwise.
-]]
-	local socktable
-	local bret
-	local bool
-	local bytes
-
-	if(type(strmsg) ~= "string") then
-		error("LUA: in srh.send 1st argument must be string, but it's "..type(strmsg))
-	elseif(key == nil or type(key) ~= "string") then
-		error("LUA: in srh.send 2st argument must be a key string, but it's "..type(key))
-	elseif(socks[key] == nil) then
-		error("LUA: the given key does not exist")
-	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
-		bret = false
-		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
-		socks[key] = nil
-		--one day we will implement an automatically reopen of the socket
-	elseif(flag == nil) then
-		error("LUA: in srh.send 3st argument must not be nil")
-	else
-		bret = true
-		socktable = socks[key]
-		if(socktable.proto == lsok.proto.tcp) then
-			bytes = lsok.send(socktable.csock, strmsg)
-		elseif(socktable.proto == lsok.proto.udp) then
-			error("LUA: UDP not implemented") --UDP NOT IMPLEMENTED YET
-			bytes = lsok.send(socktable.ssock, strmsg, socktable.ip, socktable.port)
-		end
-
-		if(flag ~= nil and flag == false) then
-			bool = lsok.close(socktable.ssock)
-			if(bool == false) then
-				print("LUA: Could not close socket: ", serversocket)
-			end
-			if(socktable.csock ~= nil) then
-				bool = lsok.close(socktable.csock)
-				if(bool == false) then
-					print("LUA: Could not close socket: ", clientsocket)
-				end
-			end
-			socktable = nil
-			socks[key] = nil
-		else
-			socktable.lastUse = os.time()
-		end
-	end
-
-	return bret
-end
-
-function srh.getkey(service)
---[[
-	parameters:
-		service - the service that has already opened a socket that you wish to look for
+		strmsg - string to be sent over the net.
+		key - the key to he socket to be used. Or nil if the sock was never created
+		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
+		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
+		port - the port of this socket. (if key isn't nil, forget about this parameter)
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 ]]
-	local skey = ""
-
-	for key,value in pairs(socks) do
-		if(type(value) == "table" and type(value.service) ~= nil and value.service == service) then
-			skey = key
-		end
-	end
-
-	return skey
-end
-
-function srh.close(service)
---[[
-	parameters:
-		service - the service whose socket shall be closed
-	return:
-		on success the return true, false otherwise.
-]]
-	local ok = false
-	local skey
-	local bool
-
-	for key,value in pairs(socks) do
-		if(type(value) == "table" and type(value.service) ~= nil and value.service == service) then
-			ok = true
-			skey = key
-		end
-	end
-
-	if(ok == false) then
-		print("LUA: no socket found to this service")
-	else
-		bool = lsok.close(socks[skey].ssock)
-		if(bool == false) then
-			print("LAU: Could not close socket: ", socks[skey].ssock)
-		end
-		if(socks[skey].csock ~= nil) then
-			bool = lsok.close(socks[skey].csock)
-			if(bool == false) then
-				print("LAU: Could not close socket: ", socks[skey].csock)
-			end
-		end
-		socks[skey] = nil
-	end
-
-	return ok
-end
-
-
---	LOCAL FUNCTIONS	--
-function socks.create()
---[[
-	parameters:
-		any
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-]]
+	local bytes
 	local key
-	local count = 0
 
-	key = math.random(conf.sockMax)
-	while(socks[tostring(key)] ~= nil and count <= conf.sockMax) do
-		key = key + 1
-		if(key > conf.sockMax) then
-			key = 1
-		end
-		count = count + 1
+	--do not check all the parameters because the functions in socket.lua already do it
+
+	if(key == nil) then
+		key = gsh.create()
+		gsh.set(proto, key, ip, port)
+	elseif(gsh.isSetted(key) == false) then
+		gsh.set(proto, key, ip, port)
 	end
 
-	if(count > conf.sockMax) then
-		--to many sockets opened
-		key = ""
-		print("LUA: cant open a new socket. There's already too many")
-	else
-		key = tostring(key)
+	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+		gsh.connect(key, ip, port)
+	end
+
+	bytes = gsh.send(clientsocket, strmsg, ip, port)
+	if(bytes <= 0) then
+		print("LUA: bytes not sent")
 	end
 
 	return key
 end
 
---[[	RUNNING SERVER	]]
-local sockgate
-local scmd --scmd = string command
+function srh.recv(key, flag, proto, ip, port)
+--[[
+	parameters:
+		flag - pas true to delete this socket after use if the service wont the socket anymore.
+		key - the key to he socket to be used. Or nil if the sock was never created
+		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
+		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
+		port - the port of this socket. (if key isn't nil, forget about this parameter)
+	return:
+		on success the returned string, an empty string otherwise.
+]]
+	local sret
+	local bytes
 
-regT.checkRegistration()
+	--do not check all the parameters because the functions in socket.lua already do it
+	--sret = lsok.recv(socktable.sock, lsok.proto.tcp)
 
-sockgate = srh.setsock(conf.proto, "watcher", SERVER_IP, 2323)
-scmd  = srh.recv(sockgate) --socket where the requisition will get from client
+	if(key == nil) then
+		key = gsh.create()
+		gsh.set(proto, key, ip, port)
+	elseif(gsh.isSetted(key) == false) then
+		gsh.set(proto, key, ip, port)
+	end
+	
+	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+		gsh.accept(key)
+	end
 
-if(sockgate == "") then
-	print("LUA: srh.lua could'n create the listener socket")
-	os.exit()
+	sret = gsh.recv(key, flag)
+
+	return sret
 end
 
-srh.send(invok.invoker(scmd), sockgate, true) --tcp
+--[[	RUNNING SERVER	]]
+
+local dnsSock
+
+--solicitar registro de servico no servidor DNS
+--Receber confirmação do registro de serviço do DNS
+
+--receber mensagem do cliente
+--chamar o invoker
+--devolver resopost do invoker pro client
+--srh.send(invok.invoker(scmd), sockgate, true) --tcp

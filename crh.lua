@@ -3,7 +3,6 @@ require "socket"
 
 crh = {}
 
-math.randomseed(os.time())
 
 --	GLOBAL FUNCTIONS	--
 function crh.send(strmsg, key, proto, ip, port)
