@@ -26,15 +26,15 @@ function request.echo(strm, proto)
 		ip, port = lookup.search("echo")
 		if(ip == conf.dnsNotFoun or port == conf.dnsNotFoun) then
 			sret = ""
-			print("request.echo 'echo' service not found at the server")
+			print("LUA: request.echo 'echo' service not found at the server")
 		else
 			if(proto == nil) then
-				skey = crh.send(strm.service .."("..strm.load..")", conf.proto, request.echo, ip, port)
+				skey = crh.send(strm.service .."("..strm.load..")", nil, conf.proto, ip, port)
 			else
-				skey = crh.send(strm.service .."("..strm.load..")", proto, request.echo, ip, port)
+				skey = crh.send(strm.service .."("..strm.load..")", nil, proto, ip, port)
 			end
 
-			if(skey ~= "") then
+			if(skey ~= "" and skey ~= nil) then
 				sret = crh.recv(skey, true)
 			end
 		end

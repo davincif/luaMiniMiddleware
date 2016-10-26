@@ -43,7 +43,7 @@ function gsh.set(proto, key, ip, port)
 	elseif(type(key) ~= "string") then
 		error("LUA: gsh.set 2st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, key is "..type(socks[key]))
+		error("LUA: gsh.set the given key is not valid, key is "..type(socks[key]))
 	else
 		ok = true
 		if(proto == lsok.proto.tcp) then
@@ -101,7 +101,7 @@ function gsh.accept(key)
 	if(type(key) ~= "string") then
 		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+		error("LUA: gsh.accept the given key is not valid, \"key\" is "..type(socks[key]))
 	elseif(socks[key].mysock ~= nil) then
 		error("LUA: the socket needs to be set first")
 	else
@@ -130,7 +130,7 @@ function gsh.connect(key, ip, port)
 	if(type(key) ~= "string") then
 		error("LUA: gsh.connect 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+		error("LUA: gsh.connect the given key is not valid, \"key\" is "..type(socks[key]))
 	elseif(socks[key].proto ~= lsok.proto.tcp) then
 		print("LUA: only tcp protocol needs to connect")
 		ok = false
@@ -160,7 +160,7 @@ function gsh.recv(key, flag)
 	if(type(key) ~= "string") then
 		error("LUA: gsh.recv 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+		error("LUA: gsh.recv the given key is not valid, \"key\" is "..type(socks[key]))
 	else
 		if(socks[key].proto == lsok.proto.tcp) then
 			--[[	TCP		]]
@@ -202,7 +202,7 @@ function gsh.send(strmsg, key, flag, ip, port)
 	elseif(key == nil or type(key) ~= "string") then
 		error("LUA: in gsh.send 2nd argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
-		error("LUA: the given key does not exist")
+		error("LUA: gsh.set the given key does not exist")
 	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
 		bytes = -1
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
@@ -258,6 +258,8 @@ function gsh.create()
 		key = tostring(key)
 	end
 
+	socks[key] = {}
+
 	return key
 end
 
@@ -273,7 +275,7 @@ function gsh.close(key)
 	if(type(key) ~= "string") then
 		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
-		error("LUA: the given key is not valid, \"key\" is "..type(socks[key]))
+		error("LUA: gsh.close the given key is not valid, \"key\" is "..type(socks[key]))
 	else
 		bool = lsok.close(socks[key].mysock)
 		if(bool == false) then

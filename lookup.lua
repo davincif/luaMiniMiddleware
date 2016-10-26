@@ -26,7 +26,7 @@ function lookup.search(service)
 			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
 			serv[service][1] = {}
 
-			skey = crh.send("SEARCH("..service..")", conf.proto, lookup.search, conf.dnsIP, conf.dnsPort)
+			skey = crh.send("SEARCH("..service..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
 			skey = crh.recv(skey, true)
 			print("service \"" ..service.."\" on server: "..skey) --testline
 
@@ -69,7 +69,7 @@ function lookup.add(service, ip, port)
 	elseif(type(port) ~= "number") then
 		error("LUA: lookup.add 3st argument spected to be number but it's " .. type(port))
 	else
-		skey = crh.send("ADD("..service..","..ip..","..port..")", conf.proto, lookup.add, conf.dnsIP, conf.dnsPort)
+		skey = crh.send("ADD("..service..","..ip..","..port..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
 		skey = crh.recv(skey, true)
 		if(skey ~= conf.dnsOk) then
 			skey = ""
