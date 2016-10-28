@@ -15,8 +15,7 @@ function invok.invoker(command)
 	local load
 
 	if(type(command) ~= "string") then
-		print("LUA: 1st argument of invok.invoker spected to be string but it's " .. type(strmsg))
-		answere = nil
+		error("LUA: 1st argument of invok.invoker spected to be string but it's " .. type(command))
 	else
 		local si, sf
 		si = string.find(command, "%(")

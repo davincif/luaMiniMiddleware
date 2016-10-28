@@ -15,6 +15,7 @@ function crh.send(strmsg, key, proto, ip, port)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
+		a numer with the amount of bytes sent
 ]]
 	local bytes
 	local key
@@ -32,12 +33,12 @@ function crh.send(strmsg, key, proto, ip, port)
 		gsh.connect(key, ip, port)
 	end
 
-	bytes = gsh.send(clientsocket, strmsg, ip, port)
+	bytes = gsh.send(strmsg, key, ip, port)
 	if(bytes <= 0) then
 		print("LUA: bytes not sent")
 	end
 
-	return key
+	return key, bytes
 end
 
 function crh.recv(key, flag, proto, ip, port)
@@ -49,6 +50,7 @@ function crh.recv(key, flag, proto, ip, port)
 		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
 	return:
+		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 		on success the returned string, an empty string otherwise.
 ]]
 	local sret
@@ -70,5 +72,5 @@ function crh.recv(key, flag, proto, ip, port)
 
 	sret = gsh.recv(key, flag)
 
-	return sret
+	return key, sret
 end

@@ -51,30 +51,31 @@ function lookup.search(service)
 	return ip, port
 end
 
-function lookup.add(service, ip, port)
+function lookup.add(serveName, ip, port)
 --[[
 	parameters:
-		service - the service's name you want to add.
-		ip - the ip where to find this service.
-		port - the port to find this service.
+		serveName - The nome of the service
+		ip - the ip for the DNS communicate with you
+		port - the port for the DNS communicate with you
 	return:
 		conf.dnsOk if the registration was perfomaed successfully, an empty string otherwise.
 ]]
 	local skey
+	local ret
 
-	if(type(service) ~= "string") then
-		error("LUA: lookup.add 1st argument spected to be string but it's " .. type(service))
+	if(type(serveName) ~= "string") then
+		error("LUA: lookup.add 1st argument spected to be string but it's " .. type(serveName))
 	elseif(type(ip) ~= "string") then
-		error("LUA: lookup.add 2st argument spected to be string but it's " .. type(ip))
+		error("LUA: lookup.add 2nd argument spected to be string but it's " .. type(ip))
 	elseif(type(port) ~= "number") then
-		error("LUA: lookup.add 3st argument spected to be number but it's " .. type(port))
+		error("LUA: lookup.add 3nd argument spected to be number but it's " .. type(port))
 	else
-		skey = crh.send("ADD("..service..","..ip..","..port..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
-		skey = crh.recv(skey, true)
-		if(skey ~= conf.dnsOk) then
-			skey = ""
+		skey = crh.send("ADD("..serveName..","..ip..","..port..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
+		skey, ret = crh.recv(skey, true)
+		if(ret ~= conf.dnsOk) then
+			ret = ""
 		end
 	end
 
-	return skey
+	return ret
 end

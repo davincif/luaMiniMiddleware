@@ -5,8 +5,12 @@ local socks = {}
 socks[key] = {}
 socks[key].mysock = socket created when lsok.open() is called
 if(proto == lsok.proto.tcp) then
-	--socks[key].csock = future client sock
+	--socks[key].csock = future client sock, or mysock if you're the client
 	socks[key].active = false --says if this socket already was accept, ou connecto to another one.
+end
+if(proto == lsok.proto.udp) then
+	socks[key].ip = ip of the client who sent the last msg to this socket
+	socks[key].port = port of the client who sent the last msg to this socket
 end
 socks[key].proto = tcp ou udp ~up to now~
 socks[key].openedAt = os.time()
@@ -17,13 +21,14 @@ math.randomseed(os.time())
 
 
 --	GLOBAL FUNCTIONS	--
-function gsh.set(proto, key, ip, port)
+function gsh.set(proto, key, ip, port, onlyOpen)
 --[[
 	parameters:
 		proto - the protocol to be used.
 		key - the key to an valid already created socket
 		ip - the ip to bind the socket
 		port - the port to bind the socket
+		onlyOpen - true if you want only open the socket, without binding ou listening (typically in client).false ou just forget for the main behavior
 	return:
 		true on success, false otherwise
 ]]
@@ -53,14 +58,16 @@ function gsh.set(proto, key, ip, port)
 				error("LUA: Could not open socket")
 			end
 
-			bool = lsok.bind(mysocket, ip, port)
-			if(bool == false) then
-				error("LUA: Could not bind")
-			end
+			if(onlyOpen ~= true) then
+				bool = lsok.bind(mysocket, ip, port)
+				if(bool == false) then
+					error("LUA: Could not bind")
+				end
 
-			bool = lsok.listen(mysocket)
-			if(bool == false) then
-				error("LUA: Could not listen")
+				bool = lsok.listen(mysocket)
+				if(bool == false) then
+					error("LUA: Could not listen")
+				end
 			end
 		elseif(proto == lsok.proto.udp) then
 			--[[	UDP		]]
@@ -69,9 +76,11 @@ function gsh.set(proto, key, ip, port)
 				error("LUA: Could not open socket")
 			end
 
-			bool = lsok.bind(mysocket, ip, port)
-			if(bool == false) then
-				error("LUA: Could not bind")
+			if(onlyOpen ~= true) then
+				bool = lsok.bind(mysocket, ip, port)
+				if(bool == false) then
+					error("LUA: Could not bind")
+				end
 			end
 		end
 
@@ -139,6 +148,7 @@ function gsh.connect(key, ip, port)
 		if(lsok.connect(socks[key].mysock, ip, port) == false) then
 			error("LAU: Could not connect socket")
 		end
+		socks[key].csock = socks[key].mysock
 		socks[key].active = true
 	end
 
@@ -152,10 +162,14 @@ function gsh.recv(key, flag)
 		flag - pas true to delete this socket after use, false other while (or leave it nil!!)
 	return:
 		msg - the msg (string) sent by the client, or an empty string if there is any error
+		changed - in case your socket is udp, changed will be true if ip or port of the cliend has changed
 
 	PS.: to save time, this function will not check if the socket is correctly setted, so, be sure of if before trying to send
 ]]
 	local sret
+	local ip
+	local port
+	local changed
 
 	if(type(key) ~= "string") then
 		error("LUA: gsh.recv 1st argument spected to be string but it's " .. type(key))
@@ -167,7 +181,14 @@ function gsh.recv(key, flag)
 			sret = lsok.recv(socks[key].csock, socks[key].proto)
 		elseif(socks[key].proto == lsok.proto.udp) then
 			--[[	UDP		]]
-			sret = lsok.recv(socks[key].mysock, socks[key].proto)
+			sret, ip, port = lsok.recv(socks[key].mysock, socks[key].proto)
+			if(ip ~= socks[key].ip and port ~= socks[key].port) then
+				socks[key].ip = ip
+				socks[key].port = port
+				changed = true
+			else
+				changed = false
+			end
 		end
 
 		if(flag ~= nil and flag == true) then
@@ -177,7 +198,7 @@ function gsh.recv(key, flag)
 		end
 	end
 
-	return sret
+	return sret, changed
 end
 
 function gsh.send(strmsg, key, flag, ip, port)
@@ -186,8 +207,8 @@ function gsh.send(strmsg, key, flag, ip, port)
 		service - who had already requested a send? and now whant to receive the return msg.
 		key - the key to an valid already created, setted and accepted/connect socket
 		flag - pas true to delete this socket after use, false other while (or leave it nil!!)
-		ip - if you're using a udp, you must pass the ip to send the msg. ignore it if you're use tcp
-		port - if you're using a udp, you must pass the port to send the msg. ignore it if you're use tcp
+		ip - if you're using a udp, you must pass the ip to send the msg just in the frist time. ignore it if you're use tcp
+		port - if you're using a udp, you must pass the port to send the msg just in the frist time. ignore it if you're use tcp
 		PS.: when using udp, never ignore the "flag", put it false, if you do not want to use it.
 	return:
 		on success returns the number of bytes sent, -1 ou 0 otherwise.
@@ -202,7 +223,7 @@ function gsh.send(strmsg, key, flag, ip, port)
 	elseif(key == nil or type(key) ~= "string") then
 		error("LUA: in gsh.send 2nd argument must be a key string, but it's "..type(key))
 	elseif(socks[key] == nil) then
-		error("LUA: gsh.set the given key does not exist")
+		error("LUA: gsh.send the given key does not exist")
 	elseif((os.time() - socks[key].lastUse > conf.sockCautionTime) and (lsok.is_socket_open() == false)) then
 		bytes = -1
 		print("LUA: socket \""..socks[key].sock.."\" was closed by the OS")
@@ -218,6 +239,13 @@ function gsh.send(strmsg, key, flag, ip, port)
 		if(socks[key].proto == lsok.proto.tcp) then
 			bytes = lsok.send(socks[key].csock, strmsg)
 		elseif(socks[key].proto == lsok.proto.udp) then
+			if(ip == nil and port == nil) then
+				ip = socks[key].ip
+				port = socks[key].port
+			else
+				socks[key].ip = ip
+				socks[key].port = port
+			end
 			bytes = lsok.send(socks[key].mysock, strmsg, ip, port)
 		end
 
@@ -273,7 +301,7 @@ function gsh.close(key)
 	local bool
 
 	if(type(key) ~= "string") then
-		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
+		error("LUA: gsh.close 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
 		error("LUA: gsh.close the given key is not valid, \"key\" is "..type(socks[key]))
 	else
@@ -281,7 +309,7 @@ function gsh.close(key)
 		if(bool == false) then
 			print("LUA: Could not close socket: "..socks[key].mysock.." on key: "..key)
 		end
-		if(socks[key].csock ~= nil) then
+		if(socks[key].csock ~= nil and socks[key].csock ~= socks[key].mysock) then
 			bool = lsok.close(socks[key].csock)
 			if(bool == false) then
 				print("LUA: Could not close socket: "..socks[key].csock.." on key: "..key)
@@ -309,7 +337,7 @@ function gsh.closeAll()
 				print("LUA: Could not close socket: "..value.mysock.." on key: "..key)
 				break
 			end
-			if(value.csock ~= nil) then
+			if(value.csock ~= nil and value.csock ~= value.mysock) then
 				bool = lsok.close(value.csock)
 				if(bool == false) then
 					print("LUA: Could not close socket: "..value.csock.." on key: "..key)
@@ -376,6 +404,7 @@ function gsh.isSetted(key)
 		key - the key to an valid already created socket
 	return:
 		true if the socket was already setted, false otherwise
+		OBS.: once active is a characteristic related to tcp sockets, if the socket is udp, this functions returns nil!
 ]]
 	local ret
 
@@ -383,7 +412,9 @@ function gsh.isSetted(key)
 		error("LUA: gsh.isActive 1st argument spected to be string but it's " .. type(key))
 	end
 
-	if(socks[key] == nil or type(socks[key]) ~= "table") then
+	if(socks[key].proto == lsok.proto.udp) then
+		ret = nil
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
 		ret = false
 	else
 		if(socks[key].mysock == nil) then

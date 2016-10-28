@@ -4,38 +4,53 @@ require "socket"
 
 srh = {}
 
-function srh.send(strmsg, key, proto, ip, port)
+function srh.send(strmsg, key, ip, port, socktable)
 --[[
 	parameters:
 		strmsg - string to be sent over the net.
 		key - the key to he socket to be used. Or nil if the sock was never created
-		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
-		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
-		port - the port of this socket. (if key isn't nil, forget about this parameter)
+		ip - the ip where to send the msg. (it's only obligatory if key is nil or protocol is udp)
+		port - the port where to send the msg. (it's only obligatory if key is nil or protocol is udp)
+		socktable - a table with: (it's only obligatory if key is nil)
+			socktable.proto - the protocol to be used.
+			socktable.ip - the ip of this socket.
+			socktable.port - the port of this socket.
+
 	return:
 		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
+		a numer with the amount of bytes sent
 ]]
 	local bytes
 
 	--do not check all the parameters because the functions in socket.lua already do it
 
-	if(key == nil) then
-		key = gsh.create()
-		gsh.set(proto, key, ip, port)
-	elseif(gsh.isSetted(key) == false) then
-		gsh.set(proto, key, ip, port)
+	if(key == nil and type(socktable) ~= "table") then
+		error("LUA: 1st argument of srh.send spected to be table but it's " .. type(socktable))
+	elseif(key == nil and type(socktable.proto) ~= "number") then
+		error("LUA: in 1st argument of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
+	elseif(key == nil and type(socktable.ip) ~= "string") then
+		error("LUA: in 1st argument of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
+	elseif(key == nil and type(socktable.port) ~= "number") then
+		error("LUA: in 1st argument of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
+	else
+		if(key == nil) then
+			key = gsh.create()
+			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
+		elseif(gsh.isSetted(key) == false) then
+			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
+		end
+
+		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+			gsh.connect(key, ip, port)
+		end
+
+		bytes = gsh.send(strmsg, key, false, ip, port)
+		if(bytes <= 0) then
+			print("LUA: bytes not sent")
+		end
 	end
 
-	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-		gsh.connect(key, ip, port)
-	end
-
-	bytes = gsh.send(clientsocket, strmsg, ip, port)
-	if(bytes <= 0) then
-		print("LUA: bytes not sent")
-	end
-
-	return key
+	return key, bytes
 end
 
 function srh.recv(key, flag, proto, ip, port)
@@ -47,6 +62,7 @@ function srh.recv(key, flag, proto, ip, port)
 		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
 	return:
+		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
 		on success the returned string, an empty string otherwise.
 ]]
 	local sret
@@ -68,17 +84,62 @@ function srh.recv(key, flag, proto, ip, port)
 
 	sret = gsh.recv(key, flag)
 
-	return sret
+	return key, sret
+end
+
+-- CHECK AND REGISTER SERVICES --
+function checkNregister()
+--[[
+	Functionality:
+		call this funtion to check if all the services in this server are registrated
+		if they dont, this function will register it.
+	Return:
+		true in success, false otherwise
+]]
+	local dnsSock
+	local bytes
+	local ret
+	local ok = true
+
+	--services.SERVER_IP
+
+	print("services registration...")
+	for key,value in pairs(regS) do
+		print("\tADD("..key..","..value.ip..","..value.port..")")
+		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto, ip = services.SERVER_IP, port = 7365})
+		dnsSock, ret = srh.recv(dnsSock, true)
+		print("\t\t"..ret)
+
+		if(ret == conf.dnsOk) then
+			dnsSock = nil
+		else
+			ok = false
+			print("LUA: in checkNregister, could not register \""..key.."\" service")
+			break
+		end
+	end
+	print("all services registrated")
+
+	return ok
 end
 
 --[[	RUNNING SERVER	]]
+local clientSock
+local bytes
+local scmd
 
-local dnsSock
+--request registration on the DNS
+checkNregister()
 
---solicitar registro de servico no servidor DNS
---Receber confirmação do registro de serviço do DNS
+--[[
+while(true) do
+	--receive the request from a new conection
+	clientsocket, scmd = srh.recv(clientSock, false, conf.proto, conf.dnsIP, conf.dnsPort)
 
---receber mensagem do cliente
---chamar o invoker
---devolver resopost do invoker pro client
---srh.send(invok.invoker(scmd), sockgate, true) --tcp
+	--call invoker and return it's answere
+	clientSock, bytes = srh.send(invok.invoker(scmd), clientSock)
+
+	gsh.close(clientSock)
+	clientSock = nil
+end
+]]

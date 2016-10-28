@@ -365,13 +365,8 @@ static int socket_recv()
 		case LS_PROTO_UDP:
 			socklen = sizeof(serverStorage);
 			byterecv = recvfrom(sock, msg_size, MAX_MSG_SIZE+1, 0, (struct sockaddr *) &serverStorage, &socklen);
-			if(getsockname(sock, (struct sockaddr *) &serverStorage, &socklen) == -1)
-			{
-				//error... don't know how to deal with it ^^"
-			}else{
-				ip = inet_ntoa(serverStorage.sin_addr);
-				port = ntohs(serverStorage.sin_port);
-			}
+			ip = inet_ntoa(serverStorage.sin_addr);
+			port = ntohs(serverStorage.sin_port);
 		break;
 
 		default:

@@ -5,3 +5,5 @@ application
 clientApp
 serverApp
 dnsApp
+*sublime-project
+sublime_project/
