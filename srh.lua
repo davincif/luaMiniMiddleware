@@ -140,6 +140,8 @@ while(true) do
 print("server vai retornar: "..scmd)
 	clientSock, bytes = srh.send(scmd, clientSock)
 
-	gsh.close(clientSock)
-	clientSock = nil
+	gsh.deactivate(clientSock)
 end
+
+gsh.close(clientSock)
+clientSock = nil

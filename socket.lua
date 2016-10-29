@@ -381,7 +381,8 @@ function gsh.isActive(key)
 	parameters:
 		key - the key to an valid already created socket
 	return:
-		true if the socket was already binded or accepted, false otherwise
+		true if the socket was already binded or accepted, false if not
+		nil if the socket isn't working on tcp
 ]]
 	local ret
 
@@ -422,6 +423,32 @@ function gsh.isSetted(key)
 		else
 			ret = true
 		end
+	end
+
+	return ret
+end
+
+function gsh.deactivate(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		true in success, false if the socket is alredy not activated
+		nil if it does not exist or if the socket isn't working on tcp
+]]
+	local ret
+
+	if(type(key) ~= "string") then
+		error("LUA: gsh.isActive 1st argument spected to be string but it's " .. type(key))
+	end
+
+	if(socks[key] == nil or type(socks[key]) ~= "table" or socks[key].proto ~= lsok.proto.tcp) then
+		ret = nil
+	elseif(socks[key].active == false) then
+		ret = false
+	else
+		ret = true
+		socks[key].active = false
 	end
 
 	return ret
