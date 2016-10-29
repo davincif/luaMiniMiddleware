@@ -4,6 +4,7 @@ lua-5.3.3/
 application
 clientApp
 serverApp
+queueServerApp
 dnsApp
 *sublime-project
 sublime_project/

@@ -1,9 +1,9 @@
---[[	INVOKER		]]
-require "server"
+--[[	QUEUE SERVER INVOKER	]]
+require "qserver"
 
-invok = {}
+qsinvok = {}
 
-function invok.invoker(command)
+function qsinvok.invoker(command)
 --[[
 	parameters:
 		command - the command that the client sent to the server
@@ -15,7 +15,7 @@ function invok.invoker(command)
 	local load
 
 	if(type(command) ~= "string") then
-		error("LUA: 1st argument of invok.invoker spected to be string but it's " .. type(command))
+		error("LUA: 1st argument of qsinvok.invoker spected to be string but it's " .. type(command))
 	else
 		local si, sf
 		si = string.find(command, "%(")

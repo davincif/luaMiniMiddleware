@@ -1,10 +1,9 @@
---[[	SERVER TO REQUEST HANDLER	]]
-require "invoker"
+--[[	QUEUE SERVER TO REQUEST HANDLER		]]
 require "socket"
 
-srh = {}
+qsrh = {}
 
-function srh.send(strmsg, key, ip, port, socktable)
+function qsrh.send(strmsg, key, ip, port, socktable)
 --[[
 	parameters:
 		strmsg - string to be sent over the net.
@@ -25,13 +24,13 @@ function srh.send(strmsg, key, ip, port, socktable)
 	--do not check all the parameters because the functions in socket.lua already do it
 
 	if(key == nil and type(socktable) ~= "table") then
-		error("LUA: 1st argument of srh.send spected to be table but it's " .. type(socktable))
+		error("LUA: 1st argument of qsrh.send spected to be table but it's " .. type(socktable))
 	elseif(key == nil and type(socktable.proto) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
+		error("LUA: in 1st argument of qsrh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
 	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.ip) ~= "string") then
-		error("LUA: in 1st argument of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
+		error("LUA: in 1st argument of qsrh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
 	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.port) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
+		error("LUA: in 1st argument of qsrh.send, socktable.port spected to be number but it's " .. type(socktable.port))
 	else
 		if(key == nil) then
 			key = gsh.create()
@@ -53,7 +52,7 @@ function srh.send(strmsg, key, ip, port, socktable)
 	return key, bytes
 end
 
-function srh.recv(key, flag, proto, ip, port)
+function qsrh.recv(key, flag, proto, ip, port)
 --[[
 	parameters:
 		flag - pas true to delete this socket after use if the service wont the socket anymore.
@@ -128,18 +127,3 @@ local scmd
 
 --request registration on the DNS
 checkNregister()
-
-while(true) do
-	--receive the request from a new conection
-	clientSock, scmd = srh.recv(clientSock, false, conf.proto, "127.0.0.1", 2323) --ip'n'port of the echo service, for testing proposes only
-
-	--call invoker and return it's answere
-	scmd = invok.invoker(scmd)
-print("server vai retornar: "..scmd)
-	clientSock, bytes = srh.send(scmd, clientSock)
-
-	gsh.deactivate(clientSock)
-end
-
-gsh.close(clientSock)
-clientSock = nil
