@@ -24,6 +24,8 @@ function request.echo(strm, proto)
 		error("request.echo 2st argument, proto, not recognized")
 	else
 		ip, port = lookup.search("echo")
+print("serviço está em: ", ip, port)
+os.exit()
 		if(ip == conf.dnsNotFoun or port == conf.dnsNotFoun) then
 			sret = ""
 			print("LUA: request.echo 'echo' service not found at the server")

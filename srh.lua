@@ -28,9 +28,9 @@ function srh.send(strmsg, key, ip, port, socktable)
 		error("LUA: 1st argument of srh.send spected to be table but it's " .. type(socktable))
 	elseif(key == nil and type(socktable.proto) ~= "number") then
 		error("LUA: in 1st argument of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
-	elseif(key == nil and type(socktable.ip) ~= "string") then
+	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.ip) ~= "string") then
 		error("LUA: in 1st argument of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
-	elseif(key == nil and type(socktable.port) ~= "number") then
+	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.port) ~= "number") then
 		error("LUA: in 1st argument of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
 	else
 		if(key == nil) then
@@ -106,7 +106,7 @@ function checkNregister()
 	print("services registration...")
 	for key,value in pairs(regS) do
 		print("\tADD("..key..","..value.ip..","..value.port..")")
-		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto, ip = services.SERVER_IP, port = 7365})
+		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
 		dnsSock, ret = srh.recv(dnsSock, true)
 		print("\t\t"..ret)
 

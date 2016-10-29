@@ -26,8 +26,8 @@ function gsh.set(proto, key, ip, port, onlyOpen)
 	parameters:
 		proto - the protocol to be used.
 		key - the key to an valid already created socket
-		ip - the ip to bind the socket
-		port - the port to bind the socket
+		ip - the ip to bind the socket if needed. (typically on server), nil otherwise
+		port - the port to bind the socket if needed. (typically on server), nil otherwise
 		onlyOpen - true if you want only open the socket, without binding ou listening (typically in client).false ou just forget for the main behavior
 	return:
 		true on success, false otherwise
@@ -41,9 +41,9 @@ function gsh.set(proto, key, ip, port, onlyOpen)
 		error("gsh.set 1st argument spected to be number but it's " .. type(proto))
 	elseif(lsok.is_proto_valid(proto) == false) then
 		error("in gsh.set, protocol \"" .. proto .. "\" not recognized")
-	elseif(type(ip) ~= "string") then
+	elseif(onlyOpen ~= true and type(ip) ~= "string") then
 		error("LUA: gsh.set 4st argument spected to be string but it's " .. type(ip))
-	elseif(type(port) ~= "number") then
+	elseif(onlyOpen ~= true and type(port) ~= "number") then
 		error("LUA: gsh.set 5st argument spected to be number but it's " .. type(port))
 	elseif(type(key) ~= "string") then
 		error("LUA: gsh.set 2st argument spected to be string but it's " .. type(key))
@@ -182,7 +182,7 @@ function gsh.recv(key, flag)
 		elseif(socks[key].proto == lsok.proto.udp) then
 			--[[	UDP		]]
 			sret, ip, port = lsok.recv(socks[key].mysock, socks[key].proto)
-			if(ip ~= socks[key].ip and port ~= socks[key].port) then
+			if(ip ~= socks[key].ip or port ~= socks[key].port) then
 				socks[key].ip = ip
 				socks[key].port = port
 				changed = true

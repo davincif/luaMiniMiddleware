@@ -2,7 +2,6 @@
 -- da vinci fez modificacao no srh que nao tem nesse branch
 
 dns = {} -- construct an empty table for service, port and ip
-local i = 1
 
 --	GLOBAL FUNCTIONS  --
 function dns.add(service, ip, port)
@@ -18,15 +17,16 @@ function dns.add(service, ip, port)
 
 	if(dns[service] == nil) then
 		dns[service] = {}
-		dns[service][i] = {}
-		dns[service][i].port = port
-		dns[service][i].ip = ip
+		dns[service].qtd = 1
+		dns[service][1] = {}
+		dns[service][1].port = port
+		dns[service][1].ip = ip
 		ok = conf.dnsOk
 	else
-		i = tablelen(dns[service]) + 1
-		dns[service][i] = {}
-		dns[service][i].port = port
-		dns[service][i].ip = ip
+		dns[service].qtd = dns[service].qtd + 1
+		dns[service][dns[service].qtd] = {}
+		dns[service][dns[service].qtd].port = port
+		dns[service][dns[service].qtd].ip = ip
 		ok = conf.dnsOk
 	end
 
@@ -43,8 +43,8 @@ function dns.search(service)
 ]]
 	local ip, port
 
-	if(dns.service == nil) then
-		print("There are no server offering service \""..service.."\"")
+	if(dns[service] == nil) then
+		print("There's no server offering service \""..service.."\"")
 	else
 		-- i = fazer bonitinho depois
 		ip = dns[service][1].ip

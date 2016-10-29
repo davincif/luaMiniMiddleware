@@ -19,22 +19,30 @@ function lookup.search(service)
 		error("LUA: lookup.search 1st argument spected to be string but it's " .. type(service))
 	else
 		if(serv[service] == nil) then
-			local skey
 			local si, sf
+			local sret --string returned
+			local bytes
 			
 			serv[service] = {}
 			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
 			serv[service][1] = {}
 
-			skey = crh.send("SEARCH("..service..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
-			skey = crh.recv(skey, true)
-			print("service \"" ..service.."\" on server: "..skey) --testline
+print("sent: ".."SEARCH("..service..")")
+			skey, bytes = crh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
+print("bytes: "..bytes)
+			skey, sret = crh.recv(skey)
+			if(sret == conf.dnsNotFound) then
+				print("service \"" ..service.."\" not registrated at the DNS")
+				ip = sret
+			else
+				print("service \"" ..service.."\" on server: "..sret) --testline
 
-			si = string.find(skey, "%(")
-			sf = string.find(skey, ",")
-			ip = string.sub(skey, si+1, sf-1)
-			si = string.find(skey, ")")
-			port = tonumber(string.sub(skey, sf+1, si-1))
+				si = string.find(sret, "%(")
+				sf = string.find(sret, ",")
+				ip = string.sub(sret, si+1, sf-1)
+				si = string.find(sret, ")")
+				port = tonumber(string.sub(sret, sf+1, si-1))
+			end
 		else
 			local aux
 
@@ -48,34 +56,7 @@ function lookup.search(service)
 		end
 	end
 
+	gsh.close(skey)
+
 	return ip, port
-end
-
-function lookup.add(serveName, ip, port)
---[[
-	parameters:
-		serveName - The nome of the service
-		ip - the ip for the DNS communicate with you
-		port - the port for the DNS communicate with you
-	return:
-		conf.dnsOk if the registration was perfomaed successfully, an empty string otherwise.
-]]
-	local skey
-	local ret
-
-	if(type(serveName) ~= "string") then
-		error("LUA: lookup.add 1st argument spected to be string but it's " .. type(serveName))
-	elseif(type(ip) ~= "string") then
-		error("LUA: lookup.add 2nd argument spected to be string but it's " .. type(ip))
-	elseif(type(port) ~= "number") then
-		error("LUA: lookup.add 3nd argument spected to be number but it's " .. type(port))
-	else
-		skey = crh.send("ADD("..serveName..","..ip..","..port..")", nil, conf.proto, conf.dnsIP, conf.dnsPort)
-		skey, ret = crh.recv(skey, true)
-		if(ret ~= conf.dnsOk) then
-			ret = ""
-		end
-	end
-
-	return ret
 end

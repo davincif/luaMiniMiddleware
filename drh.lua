@@ -123,8 +123,14 @@ while(true) do
 		--call the corrent function
 		ip, port = dns.search(service)
 
+		if(ip == nil or port == nil) then
+			cmd = conf.dnsNotFound --reusing variable
+		else
+			cmd = "("..ip..","..tostring(port)..")" --reusing variable
+		end
+
 		--send back the correct asnwere
-		drh.send("("..ip..","..tostring(port)..")", sockgate)
+		drh.send(cmd, sockgate)
 	end
 end
 
