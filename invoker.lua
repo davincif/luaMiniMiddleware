@@ -24,7 +24,7 @@ function invok.invoker(command)
 		load = string.sub(command, si+1, sf-1)
 		--invoking the correct service with the correct parameters
 		if(services[rs] ~= nil) then
-			answere = services[rs](regT[rs].doPar(load))
+			answere = services[rs](regS[rs].doPar(load))
 		else
 			answere = nil
 			print("LUA: the requested service do not exist!")

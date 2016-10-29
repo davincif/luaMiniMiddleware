@@ -3,6 +3,8 @@ require "lookup"
 require "crh"
 
 request = {}
+request.clientIP = "127.0.0.1"
+request.clientPort = 2656
 
 function request.echo(strm, proto)
 --[[
@@ -17,6 +19,7 @@ function request.echo(strm, proto)
 	local sret
 	local ip
 	local port
+	local bytes
 
 	if(type(strm) ~= "table") then
 		error("request.echo argument spected to be table but it's " .. type(strm))
@@ -25,19 +28,19 @@ function request.echo(strm, proto)
 	else
 		ip, port = lookup.search("echo")
 print("serviço está em: ", ip, port)
-os.exit()
-		if(ip == conf.dnsNotFoun or port == conf.dnsNotFoun) then
+		if(ip == conf.dnsNotFoun) then
 			sret = ""
 			print("LUA: request.echo 'echo' service not found at the server")
 		else
 			if(proto == nil) then
-				skey = crh.send(strm.service .."("..strm.load..")", nil, conf.proto, ip, port)
-			else
-				skey = crh.send(strm.service .."("..strm.load..")", nil, proto, ip, port)
+				proto = conf.proto
 			end
+print("enviando de: ", request.clientIP, request.clientPort)
+print("para: ", ip, port)
+			skey, bytes = crh.send(strm.service.."("..strm.load..")", nil, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
 
 			if(skey ~= "" and skey ~= nil) then
-				sret = crh.recv(skey, true)
+				skey, sret = crh.recv(skey, true)
 			end
 		end
 	end

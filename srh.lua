@@ -131,15 +131,15 @@ local scmd
 --request registration on the DNS
 checkNregister()
 
---[[
 while(true) do
 	--receive the request from a new conection
-	clientsocket, scmd = srh.recv(clientSock, false, conf.proto, conf.dnsIP, conf.dnsPort)
+	clientSock, scmd = srh.recv(clientSock, false, conf.proto, "127.0.0.1", 2323) --ip'n'port of the echo service, for testing proposes only
 
 	--call invoker and return it's answere
-	clientSock, bytes = srh.send(invok.invoker(scmd), clientSock)
+	scmd = invok.invoker(scmd)
+print("server vai retornar: "..scmd)
+	clientSock, bytes = srh.send(scmd, clientSock)
 
 	gsh.close(clientSock)
 	clientSock = nil
 end
-]]

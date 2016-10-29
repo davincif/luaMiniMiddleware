@@ -27,9 +27,7 @@ function lookup.search(service)
 			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
 			serv[service][1] = {}
 
-print("sent: ".."SEARCH("..service..")")
 			skey, bytes = crh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-print("bytes: "..bytes)
 			skey, sret = crh.recv(skey)
 			if(sret == conf.dnsNotFound) then
 				print("service \"" ..service.."\" not registrated at the DNS")
