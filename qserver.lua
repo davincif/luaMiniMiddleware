@@ -12,6 +12,7 @@ qregS[service].reged = false --if this service already was registered
 qregS[service].doPar(str) - call this functions to return the correct paremetres in "str" to "service"
 ]]
 
+
 -- SERVICES TO BE REGISTRATED TABLE CREATION --
 qregS.echo = {}
 qregS.echo.ip = qservices.SERVER_IP
@@ -30,22 +31,3 @@ end
 
 
 -- SERVICES IMPLEMENTATIONS --
-function qservices.echo(str)
---[[
-	parameters:
-		str - string you want to hear the acho
-	return:
-		return str in success, or false otherwise
-]]
-	local sret
-
-	if(type(str) ~= "string") then
-		print("SERVER: ECHO's argument spected to be string but it's " .. type(strmsg))
-		sret = false
-	else
-		print("SERVER: echo invoked for "..str) --testline
-		sret = str
-	end
-
-	return sret
-end

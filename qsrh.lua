@@ -1,4 +1,5 @@
 --[[	QUEUE SERVER TO REQUEST HANDLER		]]
+require "qsinvoker"
 require "socket"
 
 qsrh = {}
@@ -101,7 +102,7 @@ function checkNregister()
 	local ok = true
 
 	print("services registration...")
-	for key,value in pairs(regS) do
+	for key,value in pairs(qregS) do
 		print("\tADD("..key..","..value.ip..","..value.port..")")
 		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
 		dnsSock, ret = srh.recv(dnsSock, true)
@@ -126,4 +127,4 @@ local bytes
 local scmd
 
 --request registration on the DNS
-checkNregister()
+--checkNregister()
