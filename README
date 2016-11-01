@@ -1,0 +1,8 @@
+HOW TO INSTALL
+
+ON LINUX:
+* download the lua 5.3.3 from https://www.lua.org/ftp/lua-5.3.3.tar.gz
+* go to its directory and do make linux
+* rename the /src folder inside the lua directory to "lua" and move it to inside the folder /API inside the luaSockertAPI folder
+* go to the /API directory and do make
+* now you just need to run the dnsApp -> serverApp -> clientApp, in this order necessarily.
