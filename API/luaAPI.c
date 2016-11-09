@@ -98,6 +98,7 @@ static int socket_connect()
 {
 /*
 	lua calling: like socket_connect(int socket, char *ipaddr, int port)
+	OBS.: this is a 'blocking function'
 */
 	const char *ip;
 	int port, sock;
@@ -337,10 +338,10 @@ static int socket_send()
 static int socket_recv()
 {
 /*
-	lua calling: like socket_accept(int socket, int protocol)
+	lua calling: like socket_recv(int socket, int protocol)
 	returns the string received if TCP
 	or string received, IP and PORT received if UDP
-	OBS.: this is a blocking function
+	OBS.: this is a 'blocking function'
 */
 	int byterecv, sock, msglen, proto, port, ret = 1;
 	char *msg = NULL, msg_size[MAX_MSG_SIZE+1], *ip;
@@ -348,7 +349,7 @@ static int socket_recv()
 	socklen_t socklen;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_recv' must be integer\n");
+		luaL_error(LCS, "2nd argument of function 'socket_recv' must be integer\n");
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer\n");
 
@@ -427,6 +428,88 @@ static int socket_recv()
 		lua_pushinteger(LCS, port);
 	}
 	return ret;
+}
+
+static int socket_waiting()
+{
+/*
+	lua calling: like socket_waiting(table {[1] = socket1, [2] = socket2, ...})
+	returns a table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
+	nil if none of them are waiting to be read;
+	or a integer if any error has ocurred
+*/
+	int *myfds, myfds_len, maxfd, j, result;
+	fd_set readset;
+	LS_Bool newTable = LS_False;
+	struct timeval tv;
+
+	if(!lua_istable(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_waiting' must be table, but it's %s\n", luaL_typename(LCS, -1));
+
+	lua_len(LCS, -1);
+	myfds_len = lua_tointeger(LCS, -1);
+	lua_pop(LCS, 1);
+	myfds = (int) malloc(sizeof(int)*myfds_len);
+	if(myfds == NULL)
+		luaL_error(LCS, "function 'socket_waiting' was incapable of allocate memory");
+
+	/* table is in the stack at index 't' */
+	lua_pushnil(LCS);  /* first key */
+	for(j = 0; lua_next(LCS, -2) != 0; j++)
+	{
+		//uses 'key' (at index -2) and 'value' (at index -1) */
+		myfds[j] = lua_tointeger(LCS, -1);
+		if(myfds[j] == 0)
+			luaL_error(LCS, "socket received in 'socket_waiting' is not valid");
+
+		//do select()
+
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(LCS, 1);
+	}
+
+	//Initialize the set
+	FD_ZERO(&readset);
+	maxfd = 0;
+	for(j = 0; j < myfds_len; j++) {
+		FD_SET(myfds[j], &readset);
+		maxfd = (maxfd > myfds[j]) ? maxfd : myfds[j];
+	}
+
+	//Now, check for readability
+printf("select in\n");
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	result = select(maxfd+1, &readset, NULL, NULL, &tv);
+printf("select out\n");
+	if (result == -1) {
+		//Some error...
+		printf("select in function 'socket_waiting': %s\n", strerror(errno));
+		lua_pushinteger(LCS, errno);
+		newTable = LS_True;
+	}else{
+		result = 1; //reusing variable as a counter
+		for (j = 0; j < myfds_len; j++)
+		{
+			if (FD_ISSET(myfds[j], &readset))
+			{
+				//myfds[j] is readable
+				if(newTable == LS_False)
+				{
+					lua_newtable(LCS);
+					newTable = LS_True;
+				}
+
+				lua_pushinteger(LCS, myfds[j]);
+				lua_rawseti(LCS, -2, result);
+				result++;
+			}
+		}
+	}
+
+	if(newTable == LS_False)
+		lua_pushnil(LCS);
+	return 1;
 }
 
 static int ls_is_bigendian()
@@ -558,6 +641,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "send");
 	lua_pushcfunction(LCS, socket_recv);
 	lua_setfield(LCS, -2, "recv");
+	lua_pushcfunction(LCS, socket_waiting);
+	lua_setfield(LCS, -2, "waiting");
 	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);

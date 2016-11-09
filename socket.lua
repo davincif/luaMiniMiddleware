@@ -351,6 +351,56 @@ function gsh.closeAll()
 	return bool
 end
 
+function gsh.waiting(...)
+--[[
+	parameters:
+		keys like this: gsh.waiting(key1, key2, ...)
+	return:
+		table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
+		nil if none of them are waiting to be read;
+		or a integer if any error has ocurred
+]]
+	local len = select("#", ...)
+	local count = 1
+	local t = {}
+	local wr
+	local ret
+
+	while(count <= len) do
+		local aux = select(count, ...)
+		if(socks[aux].proto == lsok.proto.tcp) then
+			t[count] = socks[aux].csock
+		else
+			t[count] = socks[aux].mysock
+		end
+		count = count + 1
+	end
+
+	wr = lsok.waiting(t)
+
+	if(wr ~= nil) then
+		ret = {}
+		count = 1
+		while(count <= len) do
+			local aux = select(count, ...)
+			count = count + 1
+			for _, wrvalue in pairs(wr) do
+				if(socks[aux].proto == lsok.proto.udp) then
+					if(wrvalue == socks[aux].mysock) then
+						table.insert(ret, aux)
+					end
+				else
+					if(wrvalue == socks[aux].csock) then
+						table.insert(ret, aux)
+					end
+				end
+			end
+		end
+	end
+
+	return ret
+end
+
 
 
 --	GET FUNCTIONS	--
