@@ -430,12 +430,12 @@ static int socket_recv()
 	return ret;
 }
 
-static int socket_waiting()
+static int socket_select()
 {
 /*
-	lua calling: like socket_waiting(table {[1] = socket1, [2] = socket2, ...})
+	lua calling: like socket_select(table {[1] = socket1, [2] = socket2, ...})
 	returns a table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
-	nil if none of them are waiting to be read;
+	nil if none of them are select to be read;
 	or a integer if any error has ocurred
 */
 	int *myfds, myfds_len, maxfd, j, result;
@@ -444,14 +444,14 @@ static int socket_waiting()
 	struct timeval tv;
 
 	if(!lua_istable(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_waiting' must be table, but it's %s\n", luaL_typename(LCS, -1));
+		luaL_error(LCS, "1st argument of function 'socket_select' must be table, but it's %s\n", luaL_typename(LCS, -1));
 
 	lua_len(LCS, -1);
 	myfds_len = lua_tointeger(LCS, -1);
 	lua_pop(LCS, 1);
 	myfds = (int) malloc(sizeof(int)*myfds_len);
 	if(myfds == NULL)
-		luaL_error(LCS, "function 'socket_waiting' was incapable of allocate memory");
+		luaL_error(LCS, "function 'socket_select' was incapable of allocate memory");
 
 	/* table is in the stack at index 't' */
 	lua_pushnil(LCS);  /* first key */
@@ -460,7 +460,7 @@ static int socket_waiting()
 		//uses 'key' (at index -2) and 'value' (at index -1) */
 		myfds[j] = lua_tointeger(LCS, -1);
 		if(myfds[j] == 0)
-			luaL_error(LCS, "socket received in 'socket_waiting' is not valid");
+			luaL_error(LCS, "socket received in 'socket_select' is not valid");
 
 		//do select()
 
@@ -477,14 +477,12 @@ static int socket_waiting()
 	}
 
 	//Now, check for readability
-printf("select in\n");
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
 	result = select(maxfd+1, &readset, NULL, NULL, &tv);
-printf("select out\n");
 	if (result == -1) {
 		//Some error...
-		printf("select in function 'socket_waiting': %s\n", strerror(errno));
+		printf("select in function 'socket_select': %s\n", strerror(errno));
 		lua_pushinteger(LCS, errno);
 		newTable = LS_True;
 	}else{
@@ -641,8 +639,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "send");
 	lua_pushcfunction(LCS, socket_recv);
 	lua_setfield(LCS, -2, "recv");
-	lua_pushcfunction(LCS, socket_waiting);
-	lua_setfield(LCS, -2, "waiting");
+	lua_pushcfunction(LCS, socket_select);
+	lua_setfield(LCS, -2, "select");
 	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);

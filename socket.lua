@@ -351,13 +351,13 @@ function gsh.closeAll()
 	return bool
 end
 
-function gsh.waiting(...)
+function gsh.is_readable(...)
 --[[
 	parameters:
-		keys like this: gsh.waiting(key1, key2, ...)
+		keys like this: gsh.is_readable(key1, key2, ...)
 	return:
 		table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
-		nil if none of them are waiting to be read;
+		nil if none of them are is_readable to be read;
 		or a integer if any error has ocurred
 ]]
 	local len = select("#", ...)
@@ -376,7 +376,7 @@ function gsh.waiting(...)
 		count = count + 1
 	end
 
-	wr = lsok.waiting(t)
+	wr = lsok.select(t)
 
 	if(wr ~= nil) then
 		ret = {}
@@ -390,6 +390,51 @@ function gsh.waiting(...)
 						table.insert(ret, aux)
 					end
 				else
+					if(wrvalue == socks[aux].csock) then
+						table.insert(ret, aux)
+					end
+				end
+			end
+		end
+	end
+
+	return ret
+end
+
+function gsh.is_acceptable(...)
+--[[
+	parameters:
+		keys like this: gsh.is_readable(key1, key2, ...)
+	return:
+		table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
+		nil if none of them are is_readable to be read;
+		or a integer if any error has ocurred
+	PS.: if the given socket is upd, this function only waste process time!
+]]
+	local len = select("#", ...)
+	local count = 1
+	local t = {}
+	local wr
+	local ret
+
+	while(count <= len) do
+		local aux = select(count, ...)
+		if(socks[aux].proto == lsok.proto.tcp) then
+			t[count] = socks[aux].csock
+		end
+		count = count + 1
+	end
+
+	wr = lsok.select(t)
+
+	if(wr ~= nil) then
+		ret = {}
+		count = 1
+		while(count <= len) do
+			local aux = select(count, ...)
+			count = count + 1
+			for _, wrvalue in pairs(wr) do
+				if(socks[aux].proto == lsok.proto.tcp) then
 					if(wrvalue == socks[aux].csock) then
 						table.insert(ret, aux)
 					end
