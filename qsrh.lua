@@ -91,7 +91,7 @@ end
 function checkNregister()
 --[[
 	Functionality:
-		call this funtion to check if all the services in this server are registrated
+		call this funtion to check if all the services in this server are registrated.
 		if they dont, this function will register it.
 	Return:
 		true in success, false otherwise
@@ -104,8 +104,8 @@ function checkNregister()
 	print("services registration...")
 	for key,value in pairs(qregS) do
 		print("\tADD("..key..","..value.ip..","..value.port..")")
-		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		dnsSock, ret = srh.recv(dnsSock, true)
+		dnsSock, bytes = qsrh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
+		dnsSock, ret = qsrh.recv(dnsSock, true)
 		print("\t\t"..ret)
 
 		if(ret == conf.dnsOk) then
@@ -127,4 +127,19 @@ local bytes
 local scmd
 
 --request registration on the DNS
---checkNregister()
+checkNregister()
+
+while(true) do
+	--receive the request from a new conection
+	--clientSock, scmd = srh.recv(clientSock, false, conf.proto, "127.0.0.1", 2323) --ip'n'port of the echo service, for testing proposes only
+
+	--call invoker and return it's answere
+	scmd = invok.invoker(scmd)
+print("server vai retornar: "..scmd)
+	clientSock, bytes = srh.send(scmd, clientSock)
+
+	gsh.deactivate(clientSock)
+end
+
+gsh.close(clientSock)
+clientSock = nil
