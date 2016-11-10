@@ -33,9 +33,9 @@ function qregS.qpos.doPar(str)
 	local command,cname, x, y
 	local si, sf
 	si = string.find(str, "%(")
-	command = string.lower(string.sub(str, 1, si-1)))
+	command = string.lower(string.sub(str, 1, si-1))
 	sf = string.find(str, ",", si+1)
-	cname = string.sub(str, si+1, sf-1))
+	cname = string.sub(str, si+1, sf-1)
 	si = string.find(str, ",", sf+1)
 	x = tonumber(string.sub(str, sf+1, si-1))
 	sf = string.find(str, ")", si+1)
@@ -45,7 +45,7 @@ print("qregS.qpos.doPar: "..command.."("..cname..", "..x..", "..y..")")
 	return command, cname, x, y
 end
 
-function services.qpos(command, cname, x, y)
+function qservices.qpos(command, cname, x, y)
 --[[
 	parameters:
 		str - string you want to hear the acho
@@ -60,7 +60,7 @@ function services.qpos(command, cname, x, y)
 
 	if(command == "update") then
 		if(positions[cname] ~= nil) then
-			positions[cname] == {}
+			positions[cname] = {}
 		end
 		--falta checar se já existe outro jogador nesse lugar
 		positions[cname].x = x

@@ -8,7 +8,7 @@ function srh.send(strmsg, key, ip, port, socktable)
 --[[
 	parameters:
 		strmsg - string to be sent over the net.
-		key - the key to he socket to be used. Or nil if the sock was never created
+		key - the key to the socket to be used. Or nil if the sock was never created
 		ip - the ip where to send the msg. (it's only obligatory if key is nil or protocol is udp)
 		port - the port where to send the msg. (it's only obligatory if key is nil or protocol is udp)
 		socktable - a table with: (it's only obligatory if key is nil)
@@ -57,7 +57,7 @@ function srh.recv(key, flag, proto, ip, port)
 --[[
 	parameters:
 		flag - pas true to delete this socket after use if the service wont the socket anymore.
-		key - the key to he socket to be used. Or nil if the sock was never created
+		key - the key to the socket to be used. Or nil if the sock was never created
 		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
 		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
@@ -121,13 +121,56 @@ function checkNregister()
 	return ok
 end
 
+-- FIND SERVICE --
+function findS(service)
+--[[
+	parameters:
+		service - the service's name you want know about.
+	return:
+		the service's ip and port in success, conf.dnsNotFoun otherwise
+]]
+	local ip
+	local port
+	local skey
+print("searching....")
+	if(type(service) ~= "string") then
+		error("LUA: findS 1st argument spected to be string but it's " .. type(service))
+	else
+		local si, sf
+		local sret --string returned
+		local bytes
+
+		skey, bytes = srh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
+		skey, sret = srh.recv(skey, true)
+		print("\t\t"..sret)
+		if(sret == conf.dnsNotFound) then
+			print("service \"" ..service.."\" not registrated at the DNS")
+			ip = sret
+		else
+			print("service \"" ..service.."\" on server: "..sret) --testline
+
+			si = string.find(sret, "%(")
+			sf = string.find(sret, ",")
+			ip = string.sub(sret, si+1, sf-1)
+			si = string.find(sret, ")")
+			port = tonumber(string.sub(sret, sf+1, si-1))
+		end
+	end
+
+	gsh.close(skey)
+
+	return ip, port
+end
+
 --[[	RUNNING SERVER	]]
 local clientSock
 local bytes
 local scmd
 
 --request registration on the DNS
-checkNregister()
+--checkNregister()
+ip, port = findS("qpos")
+print("echo ip: "..ip.." port: "..port)
 
 while(true) do
 	--receive the request from a new conection
