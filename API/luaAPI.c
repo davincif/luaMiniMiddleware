@@ -510,6 +510,25 @@ static int socket_select()
 	return 1;
 }
 
+static int socket_sleep()
+{
+/*
+	lua calling: like socket_sleep(micro_seconds)
+*/
+	struct timeval tv;
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_sleep' must be number, but it's %s\n", luaL_typename(LCS, -1));
+
+	tv.tv_usec = lua_tointeger(LCS, -1);
+	tv.tv_sec = tv.tv_usec/1000000;
+	tv.tv_usec = tv.tv_usec%1000000;
+	if(select(0, NULL, NULL, NULL, &tv) == -1)
+		printf("select in function 'socket_sleep': %s\n", strerror(errno));
+
+	return 0;
+}
+
 static int ls_is_bigendian()
 {
 /*
@@ -641,6 +660,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "recv");
 	lua_pushcfunction(LCS, socket_select);
 	lua_setfield(LCS, -2, "select");
+	lua_pushcfunction(LCS, socket_sleep);
+	lua_setfield(LCS, -2, "sleep");
 	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);

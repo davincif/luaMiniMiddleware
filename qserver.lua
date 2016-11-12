@@ -23,6 +23,7 @@ qregS.qpos.reged = false
 qregS.qpos.serverIP = nil
 qregS.qpos.serverPORT = nil
 function qregS.qpos.doPar(str)
+-- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
 		str - string received from client with the format "update(clientName,x,y)"
@@ -44,38 +45,32 @@ function qregS.qpos.doPar(str)
 print("qregS.qpos.doPar: "..command.."("..cname..", "..x..", "..y..")")
 	return command, cname, x, y
 end
-
 function qservices.qpos(command, cname, x, y)
+-- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
-		str - string you want to hear the acho
+		str - string you want to hear the qpos
 	return:
 		return str in success, or false otherwise
 ]]
-	if(services.qpos.positions == nil) then
-		services.qpos.positions = {}
+	if(qregS.qpos.positions == nil) then
+		qregS.qpos.positions = {}
 	end
 
-	local positions = services.qpos.positions
+	local positions = qregS.qpos.positions
 
 	if(command == "update") then
 		if(positions[cname] ~= nil) then
 			positions[cname] = {}
 		end
-		--falta checar se já existe outro jogador nesse lugar
 		positions[cname].x = x
 		positions[cname].y = y
 		positions[cname].needUpdate = true
 	elseif(command == "remove") then
+		positions[cname].x = nil
+		positions[cname].y = nil
+		positions[cname].needUpdate = true
 	else
-		if(positions[cname] == nil) then
-			--error: this client is not on the list
-		else
-			positions[cname] = nil
-		end
 		--error: command not recognized
 	end
 end
-
-
--- SERVICES IMPLEMENTATIONS --

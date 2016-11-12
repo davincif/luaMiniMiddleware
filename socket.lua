@@ -351,47 +351,40 @@ function gsh.closeAll()
 	return bool
 end
 
-function gsh.is_readable(...)
+function gsh.is_readable(socketTable)
 --[[
 	parameters:
-		keys like this: gsh.is_readable(key1, key2, ...)
+		keys like this: gsh.is_readable({[1] = key1, [2] = key2, ...})
 	return:
 		table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
 		nil if none of them are is_readable to be read;
 		or a integer if any error has ocurred
 ]]
-	local len = select("#", ...)
-	local count = 1
-	local t = {}
+	local targ = {}
 	local wr
 	local ret
 
-	while(count <= len) do
-		local aux = select(count, ...)
-		if(socks[aux].proto == lsok.proto.tcp) then
-			t[count] = socks[aux].csock
+	for _, stv in pairs(socketTable) do
+		if(socks[stv].proto == lsok.proto.tcp) then
+			table.insert(targ, socks[stv].csock)
 		else
-			t[count] = socks[aux].mysock
+			table.insert(targ, socks[stv].mysock)
 		end
-		count = count + 1
 	end
 
-	wr = lsok.select(t)
+	wr = lsok.select(targ)
 
 	if(wr ~= nil) then
 		ret = {}
-		count = 1
-		while(count <= len) do
-			local aux = select(count, ...)
-			count = count + 1
+		for _, stv in pairs(socketTable) do
 			for _, wrvalue in pairs(wr) do
-				if(socks[aux].proto == lsok.proto.udp) then
-					if(wrvalue == socks[aux].mysock) then
-						table.insert(ret, aux)
+				if(socks[stv].proto == lsok.proto.udp) then
+					if(wrvalue == socks[stv].mysock) then
+						table.insert(ret, stv)
 					end
 				else
-					if(wrvalue == socks[aux].csock) then
-						table.insert(ret, aux)
+					if(wrvalue == socks[stv].csock) then
+						table.insert(ret, stv)
 					end
 				end
 			end
@@ -401,43 +394,34 @@ function gsh.is_readable(...)
 	return ret
 end
 
-function gsh.is_acceptable(...)
+function gsh.is_acceptable(socketTable)
 --[[
 	parameters:
-		keys like this: gsh.is_readable(key1, key2, ...)
+		keys like this: gsh.is_readable({[1] = key1, [2] = key2, ...})
 	return:
 		table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
 		nil if none of them are is_readable to be read;
 		or a integer if any error has ocurred
 	PS.: if the given socket is upd, this function only waste process time!
 ]]
-	local len = select("#", ...)
-	local count = 1
-	local t = {}
+	local targ = {}
 	local wr
 	local ret
 
-	while(count <= len) do
-		local aux = select(count, ...)
-		if(socks[aux].proto == lsok.proto.tcp) then
-			t[count] = socks[aux].csock
+	for _, stv in pairs(socketTable) do
+		if(socks[stv].proto == lsok.proto.tcp) then
+			table.insert(targ, socks[stv].csock)
 		end
-		count = count + 1
 	end
 
-	wr = lsok.select(t)
+	wr = lsok.select(targ)
 
 	if(wr ~= nil) then
 		ret = {}
-		count = 1
-		while(count <= len) do
-			local aux = select(count, ...)
-			count = count + 1
+		for _, stv in pairs(socketTable) do
 			for _, wrvalue in pairs(wr) do
-				if(socks[aux].proto == lsok.proto.tcp) then
-					if(wrvalue == socks[aux].csock) then
-						table.insert(ret, aux)
-					end
+				if(socks[stv].proto == lsok.proto.tcp and wrvalue == socks[stv].csock) then
+					table.insert(ret, stv)
 				end
 			end
 		end

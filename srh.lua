@@ -3,6 +3,7 @@ require "invoker"
 require "socket"
 
 srh = {}
+local STP = 100000 --STP (Sleep Time Pattern) --100000μs = 0,1s
 
 function srh.send(strmsg, key, ip, port, socktable)
 --[[
@@ -56,8 +57,8 @@ end
 function srh.recv(key, flag, proto, ip, port)
 --[[
 	parameters:
-		flag - pas true to delete this socket after use if the service wont the socket anymore.
 		key - the key to the socket to be used. Or nil if the sock was never created
+		flag - pas true to delete this socket after use if the service wont use the socket anymore.
 		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
 		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
@@ -87,101 +88,105 @@ function srh.recv(key, flag, proto, ip, port)
 	return key, sret
 end
 
--- CHECK AND REGISTER SERVICES --
-function checkNregister()
---[[
-	Functionality:
-		call this funtion to check if all the services in this server are registrated
-		if they dont, this function will register it.
-	Return:
-		true in success, false otherwise
-]]
-	local dnsSock
-	local bytes
-	local ret
-	local ok = true
-
-	print("services registration...")
-	for key,value in pairs(regS) do
-		print("\tADD("..key..","..value.ip..","..value.port..")")
-		dnsSock, bytes = srh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		dnsSock, ret = srh.recv(dnsSock, true)
-		print("\t\t"..ret)
-
-		if(ret == conf.dnsOk) then
-			dnsSock = nil
-		else
-			ok = false
-			print("LUA: in checkNregister, could not register \""..key.."\" service")
-			break
-		end
-	end
-	print("all services registrated")
-
-	return ok
-end
-
 -- FIND SERVICE --
-function findS(service)
+local function findS()
 --[[
 	parameters:
-		service - the service's name you want know about.
+		none
 	return:
-		the service's ip and port in success, conf.dnsNotFoun otherwise
+		none
 ]]
-	local ip
-	local port
 	local skey
-print("searching....")
-	if(type(service) ~= "string") then
-		error("LUA: findS 1st argument spected to be string but it's " .. type(service))
-	else
-		local si, sf
-		local sret --string returned
-		local bytes
+	local si, sf
+	local sret --string returned
+	local bytes
 
-		skey, bytes = srh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		skey, sret = srh.recv(skey, true)
-		print("\t\t"..sret)
+	print("searching services on Queue Server...")
+	for rkey,rval in pairs(regS) do
+		skey, bytes = srh.send("SEARCH("..rkey..")", skey, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
+		skey, sret = srh.recv(skey, false)
 		if(sret == conf.dnsNotFound) then
-			print("service \"" ..service.."\" not registrated at the DNS")
-			ip = sret
+			print("DNS returned error: "..sret)
+			print("service \"" ..rkey.."\" not registrated at the DNS")
 		else
-			print("service \"" ..service.."\" on server: "..sret) --testline
+			print("service \"" ..rkey.."\" on server: "..sret) --testline
 
 			si = string.find(sret, "%(")
 			sf = string.find(sret, ",")
-			ip = string.sub(sret, si+1, sf-1)
+			rval.QS_IP = string.sub(sret, si+1, sf-1)
 			si = string.find(sret, ")")
-			port = tonumber(string.sub(sret, sf+1, si-1))
+			rval.QS_PORT = tonumber(string.sub(sret, sf+1, si-1))
+			rval.reged = true
 		end
 	end
 
 	gsh.close(skey)
+end
 
-	return ip, port
+local function opensockets()
+--[[
+	parameters:
+		just open the socket of all services in the server
+	return:
+		a table with all keys
+]]
+	local boolret
+	local tret = {}
+
+	for rkey,rval in pairs(regS) do
+		if(rval.reged == true) then
+			--only open socket to those services who are registrated in the queue server
+			rval.skey = gsh.create()
+			boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
+			if(boolret == false) then
+				print("could not set socktable of service \""..rkey.."\"")
+				os.exit()
+			end
+			table.insert(tret, rval.skey)
+		end
+	end
+
+	return tret
 end
 
 --[[	RUNNING SERVER	]]
-local clientSock
 local bytes
 local scmd
+local worked
+local keyt
+local taux
 
---request registration on the DNS
---checkNregister()
-ip, port = findS("qpos")
-print("echo ip: "..ip.." port: "..port)
+findS()
+keyt = opensockets()
 
 while(true) do
+	worked = false
 	--receive the request from a new conection
-	clientSock, scmd = srh.recv(clientSock, false, conf.proto, "127.0.0.1", 2323) --ip'n'port of the echo service, for testing proposes only
+	taux = gsh.is_acceptable(keyt)
+	if(taux ~= nil) then
+		for key, value in pairs(taux) do
+			gsh.accept(taux.skey)
+			worked = true
+		end
+	end
 
-	--call invoker and return it's answere
-	scmd = invok.invoker(scmd)
-print("server vai retornar: "..scmd)
-	clientSock, bytes = srh.send(scmd, clientSock)
+	taux = gsh.is_readable(keyt)
+	if(taux ~= nil) then
+		for key, value in pairs(taux) do
+			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
+			--call invoker and return it's answere
+			scmd = invok.invoker(scmd)
+			print("server will answer: "..scmd)
+			taux.skey, bytes = srh.send(scmd, taux.skey)
+			
+			gsh.deactivate(taux.skey)
+			worked = true
+		end
+	end
 
-	gsh.deactivate(clientSock)
+	if(worked == false) then
+		lsok.sleep(STP)
+	end
 end
 
 gsh.close(clientSock)
