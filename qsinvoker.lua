@@ -34,7 +34,7 @@ function qsinvok.invoker(command)
 		if(rs == "sign") then
 			--sing("clientName")
 			if(qservices[rq] == nil) then
-				answere = conf.dnsNotFound
+				answere = conf.notFound
 			else
 				if(load == "") then
 					load = randomString()
@@ -50,13 +50,13 @@ function qsinvok.invoker(command)
 		elseif(rs == "revoke") then
 			--revoke("clientName")
 			if(qservices[rq] == nil) then
-				answere = conf.dnsNotFound
+				answere = conf.notFound
 			else
 				if(load == "") then
 					answere = conf.SPE
 				else
 					if(qservices[rq].revoke(load) == true) then
-						answere = conf.dnsOk
+						answere = conf.ok
 					else
 						answere = conf.signE
 					end
@@ -73,9 +73,9 @@ function qsinvok.invoker(command)
 
 			sf = qservices[rq].update(cname, str) --reusing the variable
 			if(sf == true) then
-				answere = conf.dnsOk
+				answere = conf.ok
 			elseif(sf == false) then
-				answere = conf.dnsNotFound
+				answere = conf.notFound
 			else
 				answere = conf.signE
 			end

@@ -124,7 +124,7 @@ while(true) do
 		ip, port = dns.search(service)
 
 		if(ip == nil or port == nil) then
-			cmd = conf.dnsNotFound --reusing variable
+			cmd = conf.notFound --reusing variable
 		else
 			cmd = "("..ip..","..tostring(port)..")" --reusing variable
 		end

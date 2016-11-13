@@ -109,7 +109,7 @@ function checkNregister()
 		dnsSock, ret = qsrh.recv(dnsSock, false)
 		print("\t\t"..ret)
 
-		if(ret == conf.dnsOk) then
+		if(ret == conf.ok) then
 			value.reged = true
 		else
 			ok = false

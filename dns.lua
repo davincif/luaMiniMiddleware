@@ -11,7 +11,7 @@ function dns.add(service, ip, port)
 		port - port where service is hosted 
 		ip - IP of server that host the service
 	return:
-		conf.dnsOk in success, an empty string otherwise
+		conf.ok in success, an empty string otherwise
 ]]
 	local ok = ""
 
@@ -21,13 +21,13 @@ function dns.add(service, ip, port)
 		dns[service][1] = {}
 		dns[service][1].port = port
 		dns[service][1].ip = ip
-		ok = conf.dnsOk
+		ok = conf.ok
 	else
 		dns[service].qtd = dns[service].qtd + 1
 		dns[service][dns[service].qtd] = {}
 		dns[service][dns[service].qtd].port = port
 		dns[service][dns[service].qtd].ip = ip
-		ok = conf.dnsOk
+		ok = conf.ok
 	end
 
 	return ok

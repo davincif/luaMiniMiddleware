@@ -105,7 +105,7 @@ local function findS()
 	for rkey,rval in pairs(regS) do
 		skey, bytes = srh.send("SEARCH("..rkey..")", skey, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
 		skey, sret = srh.recv(skey, false)
-		if(sret == conf.dnsNotFound) then
+		if(sret == conf.notFound) then
 			print("DNS returned error: "..sret)
 			print("service \"" ..rkey.."\" not registrated at the DNS")
 		else

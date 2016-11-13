@@ -29,7 +29,7 @@ function lookup.search(service)
 
 			skey, bytes = crh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
 			skey, sret = crh.recv(skey)
-			if(sret == conf.dnsNotFound) then
+			if(sret == conf.notFound) then
 				print("service \"" ..service.."\" not registrated at the DNS")
 				ip = sret
 			else
