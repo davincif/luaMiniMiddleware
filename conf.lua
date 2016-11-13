@@ -1,8 +1,13 @@
 --[[	CONFIGURATION FILE	]]
+
+
+--[[	ATTENTION: ONLY EDIT THIS FILE IF YOU >>REALLY<< KNOW WHAT YOU'RE DOING!	]]
+
+
 conf = {}
 
 
---	EDIT THIS SECTION AT YOUR WILL	--
+--	DEFINITIONS	--
 conf.client = "client.lua"		--defines what file will be invoked when the client is called
 conf.server = "srh.lua"			--defines what file will be invoked when the server is called
 conf.dns = "drh.lua"			--defines what file will be invoked when the dns is called
@@ -16,9 +21,12 @@ conf.dnsPort = 6001				--the port of the DNS server
 conf.dnsNotFound = "not found"	--the msg received when the requested service is not registered at the dns
 conf.dnsOk = "ok"				--the msg received when the requested service at the dns was performed successfully
 conf.SPE = "SPE"				-- SPE (Server Parameter Error) in case the client call a function in the server with worng parameters, this will be returned
+conf.CQNL = 6					--CQNL (Client Queue Name Length)
+conf.CQNV = 2					--CQNV (Client Queue Name Variance)
+conf.signE = "already signed"	--sign error (occuer when the same client try to sign to the same queue more than once)
 
 
---DO NOT MESS ANYTHING HERE!
+--AUTO ADJUSTMENTS
 if(string.lower(conf.proto) == "tcp") then
 	conf.proto = lsok.proto.tcp
 elseif(string.lower(conf.proto) == "udp") then
@@ -34,6 +42,7 @@ else
 	error("the configure file had not recognezed the protocol \"" .. conf.proto .. "\"")
 end
 
+--GET FUNCTIONS
 function conf.getClient()
 	return conf.client
 end

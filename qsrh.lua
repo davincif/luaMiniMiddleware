@@ -3,12 +3,13 @@ require "qsinvoker"
 require "socket"
 
 qsrh = {}
+local STP = 100000 --STP (Sleep Time Pattern) --100000μs = 0,1s
 
 function qsrh.send(strmsg, key, ip, port, socktable)
 --[[
 	parameters:
 		strmsg - string to be sent over the net.
-		key - the key to he socket to be used. Or nil if the sock was never created
+		key - the key to the socket to be used. Or nil if the sock was never created
 		ip - the ip where to send the msg. (it's only obligatory if key is nil or protocol is udp)
 		port - the port where to send the msg. (it's only obligatory if key is nil or protocol is udp)
 		socktable - a table with: (it's only obligatory if key is nil)
@@ -56,8 +57,8 @@ end
 function qsrh.recv(key, flag, proto, ip, port)
 --[[
 	parameters:
-		flag - pas true to delete this socket after use if the service wont the socket anymore.
 		key - the key to he socket to be used. Or nil if the sock was never created
+		flag - pas true to delete this socket after use if the service wont the socket anymore.
 		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
 		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
 		port - the port of this socket. (if key isn't nil, forget about this parameter)
@@ -105,11 +106,11 @@ function checkNregister()
 	for key,value in pairs(qregS) do
 		print("\tADD("..key..","..value.ip..","..value.port..")")
 		dnsSock, bytes = qsrh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		dnsSock, ret = qsrh.recv(dnsSock, true)
+		dnsSock, ret = qsrh.recv(dnsSock, false)
 		print("\t\t"..ret)
 
 		if(ret == conf.dnsOk) then
-			dnsSock = nil
+			value.reged = true
 		else
 			ok = false
 			print("LUA: in checkNregister, could not register \""..key.."\" service")
@@ -118,28 +119,78 @@ function checkNregister()
 	end
 	print("all services registrated")
 
+	gsh.close(dnsSock)
+
 	return ok
 end
 
+local function opensockets()
+--[[
+	parameters:
+		just open the socket of all services in the server
+	return:
+		a table with all keys
+]]
+	local boolret
+	local tret = {}
+
+	for rkey,rval in pairs(qregS) do
+		if(rval.reged == true) then
+			--only open socket to those services who are registrated in the queue server
+			rval.skey = gsh.create()
+			boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
+			if(boolret == false) then
+				print("could not set socktable of queue service \""..rkey.."\"")
+				os.exit()
+			end
+			table.insert(tret, rval.skey)
+		end
+	end
+
+	return tret
+end
+
 --[[	RUNNING SERVER	]]
-local clientSock
 local bytes
 local scmd
+local worked
+local keyt
+local taux
+
 
 --request registration on the DNS
 checkNregister()
+keyt = opensockets()
 
 while(true) do
+	worked = false
+
 	--receive the request from a new conection
-	--clientSock, scmd = srh.recv(clientSock, false, conf.proto, "127.0.0.1", 2323) --ip'n'port of the echo service, for testing proposes only
+	taux = gsh.is_acceptable(keyt)
+	if(taux ~= nil) then
+		for key, value in pairs(taux) do
+			gsh.accept(taux.skey)
+			worked = true
+		end
+	end
 
-	--call invoker and return it's answere
-	scmd = invok.invoker(scmd)
-print("server vai retornar: "..scmd)
-	clientSock, bytes = srh.send(scmd, clientSock)
+	taux = gsh.is_readable(keyt)
+	if(taux ~= nil) then
+		for key, value in pairs(taux) do
+			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
+			--call invoker and return it's answere
+			scmd = qsinvok.invoker(scmd)
+			print("server will answer: "..scmd)
+			taux.skey, bytes = srh.send(scmd, taux.skey)
+			
+			gsh.deactivate(taux.skey)
+			worked = true
+		end
+	end
 
-	gsh.deactivate(clientSock)
+	if(worked == false) then
+		lsok.sleep(STP)
+	end
 end
 
-gsh.close(clientSock)
-clientSock = nil
+gsh.closeAll()

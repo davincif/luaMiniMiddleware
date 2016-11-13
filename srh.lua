@@ -189,5 +189,4 @@ while(true) do
 	end
 end
 
-gsh.close(clientSock)
-clientSock = nil
+gsh.closeAll()
