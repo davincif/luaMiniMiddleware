@@ -10,9 +10,9 @@ qservices[service].dellist = {} --list of client revoked still not informed to t
 qservices[service].dellist.quantity = 2 --the quantity of client to inform about the revoke to the server
 qservices[service].dellist[1] = "client1"
 qservices[service].dellist[2] = "client2" -- so on...
+qservices[service].queue = {} --put here anydata you quant to store
 qservices[service].queue.s_update = false --set true to update information to server as soon as possible
 qservices[service].queue.c_update = false --set true to update information to the clients
-qservices[service].queue = {} --put here anydata you quant to store
 qservices[service].queue.quantity = 0 --the quantity of clients
 qservices[service].queue[client] = {} --a new table to store each client information
 qservices[service].queue[client].___ --any data needed to the service

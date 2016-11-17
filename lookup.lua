@@ -9,7 +9,7 @@ function lookup.search(service)
 	parameters:
 		service - the service's name you want know about.
 	return:
-		the correct service's ip and por in success, conf.dnsNotFoun otherwise
+		the correct service's ip and por in success, conf.notFoun otherwise
 ]]
 	local ip
 	local port

@@ -24,6 +24,9 @@ conf.SPE = "SPE"				-- SPE (Server Parameter Error) in case the client call a fu
 conf.CQNL = 6					--CQNL (Client Queue Name Length)
 conf.CQNV = 2					--CQNV (Client Queue Name Variance)
 conf.signE = "already signed"	--sign error (occuer when the same client try to sign to the same queue more than once)
+conf.maxPort = math.pow(2,16)-1	--the maximal number to open a port
+conf.minPort = 1023+1-1			--the minimal number to open a port
+conf.output = true				--says if the programs will output mensagens (like a debug)
 
 
 --AUTO ADJUSTMENTS
@@ -63,3 +66,9 @@ function conf.getProto()
 	return conf.proto
 end
 
+--OTHER FUNCTIONS
+function conf.print(str)
+	if(conf.output == true) then
+		print(str)
+	end
+end

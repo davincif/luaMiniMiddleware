@@ -183,7 +183,7 @@ while(true) do
 			print("server will answer: "..scmd)
 			taux.skey, bytes = srh.send(scmd, taux.skey)
 			
-			gsh.deactivate(taux.skey)
+			--gsh.deactivate(taux.skey) acho que não vai recisasr desativar, eles vão continuar conectados.
 			worked = true
 		end
 	end

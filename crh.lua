@@ -26,13 +26,13 @@ function crh.send(strmsg, key, ip, port, socktable)
 	--do not check all the parameters because the functions in socket.lua already do it
 
 	if(key == nil and type(socktable) ~= "table") then
-		error("LUA: 1st argument of srh.send spected to be table but it's " .. type(socktable))
+		error("LUA: argument 5 of srh.send spected to be table but it's " .. type(socktable))
 	elseif(key == nil and type(socktable.proto) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
+		error("LUA: in argument 5 of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
 	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.ip) ~= "string") then
-		error("LUA: in 1st argument of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
+		error("LUA: in argument 5 of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
 	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.port) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
+		error("LUA: in argument 5 of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
 	else
 		if(key == nil) then
 			key = gsh.create()

@@ -27,12 +27,19 @@ function qsinvok.invoker(command)
 		si = string.find(command, "%(")
 		rq = string.lower(string.sub(command, 1, si-1))
 		sf = string.find(command, ",")
-		rs = string.sub(command, si+1, sf-1)
-		si = string.find(command, ")")
-		load = string.sub(command, sf+1, si-1)
+		if(sf == nil) then
+			sf = string.find(command, ")")
+			rs = string.sub(command, si+1, sf-1)
+			load = ""
+		else
+			rs = string.sub(command, si+1, sf-1)
+			si = string.find(command, ")")
+			load = string.sub(command, sf+1, si-1)
+		end
 		--invoking the correct service with the correct parameters
 		if(rs == "sign") then
 			--sing("clientName")
+			--coomand exemple: "chat(sing,cja823)" or "chat(sing)"
 			if(qservices[rq] == nil) then
 				answere = conf.notFound
 			else
@@ -49,6 +56,7 @@ function qsinvok.invoker(command)
 			end
 		elseif(rs == "revoke") then
 			--revoke("clientName")
+			--coomand exemple: "chat(revoke,cja823)"
 			if(qservices[rq] == nil) then
 				answere = conf.notFound
 			else
@@ -64,6 +72,7 @@ function qsinvok.invoker(command)
 			end
 		elseif(rs == "update") then
 			--update
+			--coomand exemple: "chat(revoke,cja823, data, data, ...)"
 			local cname
 			local str
 
