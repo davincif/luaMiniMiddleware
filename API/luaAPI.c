@@ -433,7 +433,7 @@ static int socket_recv()
 static int socket_select()
 {
 /*
-	lua calling: like socket_select(table {[1] = socket1, [2] = socket2, ...})
+	lua calling: like socket_select(table_size, table {[1] = socket1, [2] = socket2, ...})
 	returns a table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
 	nil if none of them are select to be read;
 	or a integer if any error has ocurred
@@ -504,6 +504,9 @@ static int socket_select()
 			}
 		}
 	}
+
+	if(myfds != NULL)
+		free(myfds);
 
 	if(newTable == LS_False)
 		lua_pushnil(LCS);

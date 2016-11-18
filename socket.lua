@@ -372,7 +372,7 @@ function gsh.is_readable(socketTable)
 		end
 	end
 
-	wr = lsok.select(targ)
+	wr = lsok.select(#targ, targ)
 
 	if(wr ~= nil) then
 		ret = {}
@@ -410,17 +410,17 @@ function gsh.is_acceptable(socketTable)
 
 	for _, stv in pairs(socketTable) do
 		if(socks[stv].proto == lsok.proto.tcp) then
-			table.insert(targ, socks[stv].csock)
+			table.insert(targ, socks[stv].mysock)
 		end
 	end
 
-	wr = lsok.select(targ)
+	wr = lsok.select(#targ, targ)
 
 	if(wr ~= nil) then
 		ret = {}
 		for _, stv in pairs(socketTable) do
 			for _, wrvalue in pairs(wr) do
-				if(socks[stv].proto == lsok.proto.tcp and wrvalue == socks[stv].csock) then
+				if(socks[stv].proto == lsok.proto.tcp and wrvalue == socks[stv].mysock) then
 					table.insert(ret, stv)
 				end
 			end

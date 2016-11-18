@@ -42,7 +42,9 @@ function crh.send(strmsg, key, ip, port, socktable)
 		end
 
 		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+print("vai da connect em: ", ip, port)
 			gsh.connect(key, ip, port)
+print("deu")
 		end
 
 		bytes = gsh.send(strmsg, key, false, ip, port)

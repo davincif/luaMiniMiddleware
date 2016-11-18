@@ -67,8 +67,8 @@ function conf.getProto()
 end
 
 --OTHER FUNCTIONS
-function conf.print(str)
+function conf.print(...)
 	if(conf.output == true) then
-		print(str)
+		print(...)
 	end
 end

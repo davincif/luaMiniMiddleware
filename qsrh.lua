@@ -72,6 +72,7 @@ function qsrh.recv(key, flag, proto, ip, port)
 	--do not check all the parameters because the functions in socket.lua already do it
 	--sret = lsok.recv(socktable.sock, lsok.proto.tcp)
 
+print("recebendo")
 	if(key == nil) then
 		key = gsh.create()
 		gsh.set(proto, key, ip, port)
@@ -80,7 +81,9 @@ function qsrh.recv(key, flag, proto, ip, port)
 	end
 	
 	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+print("gsh.accept(key)")
 		gsh.accept(key)
+print("////gsh.accept(key)")
 	end
 
 	sret = gsh.recv(key, flag)
@@ -89,7 +92,7 @@ function qsrh.recv(key, flag, proto, ip, port)
 end
 
 -- CHECK AND REGISTER SERVICES --
-function checkNregister()
+local function checkNregister()
 --[[
 	Functionality:
 		call this funtion to check if all the services in this server are registrated.
@@ -150,6 +153,13 @@ local function opensockets()
 	return tret
 end
 
+local function FindServiceBySock(sock)
+--[[
+	parameters:
+	return:
+]]
+end
+
 --[[	RUNNING SERVER	]]
 local bytes
 local scmd
@@ -167,17 +177,20 @@ while(true) do
 
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
+
 	if(taux ~= nil) then
+		conf.print("accept request identified")
 		for key, value in pairs(taux) do
-			gsh.accept(taux.skey)
+			gsh.accept(value)
 			worked = true
 		end
 	end
 
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
+		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
-			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
+			taux.skey, scmd = qsrh.recv(value, false, conf.proto, taux.ip, taux.port)
 			--call invoker and return it's answere
 			scmd = qsinvok.invoker(scmd)
 			print("server will answer: "..scmd)
