@@ -70,7 +70,6 @@ function qsrh.recv(key, flag, proto, ip, port)
 	local bytes
 
 	--do not check all the parameters because the functions in socket.lua already do it
-	--sret = lsok.recv(socktable.sock, lsok.proto.tcp)
 
 print("recebendo")
 	if(key == nil) then
@@ -190,11 +189,20 @@ while(true) do
 	if(taux ~= nil) then
 		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
-			taux.skey, scmd = qsrh.recv(value, false, conf.proto, taux.ip, taux.port)
+			local ignore
+			ignore, scmd = qsrh.recv(value, false, conf.proto, taux.ip, taux.port)
+			--[[ BUG NOTE
+				Note that when the QS receives a msg, it'll do so by the csock socket within skey "value"
+				it's a ruge problem once whe whant to keep a long data exchange, 'cause each new client
+				will rewrite the socket of the last one. A way to around this is manteining a table of client,
+				but mechanisms gotta be craeted to deal with it.
+				For now, my guess is the the software will still work with this bug, but in a constate state of failure ^^"
+			]]
 			--call invoker and return it's answere
+print("ignore, scmd", ignore, scmd)
 			scmd = qsinvok.invoker(scmd)
 			print("server will answer: "..scmd)
-			taux.skey, bytes = srh.send(scmd, taux.skey)
+			ignore, bytes = qsrh.send(scmd, value)
 			
 			--gsh.deactivate(taux.skey) acho que não vai recisasr desativar, eles vão continuar conectados.
 			worked = true

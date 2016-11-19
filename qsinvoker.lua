@@ -7,6 +7,8 @@ local tp = os.time() --time parameter
 local tlp = 30 --time lapse parameter, in seconds
 math.randomseed(tp)
 
+local lf = {} --local functions
+
 function qsinvok.invoker(command)
 --[[
 	parameters:
@@ -38,16 +40,16 @@ function qsinvok.invoker(command)
 		end
 		--invoking the correct service with the correct parameters
 		if(rs == "sign") then
-			--sing("clientName")
-			--coomand exemple: "chat(sing,cja823)" or "chat(sing)"
+			--sign("clientName")
+			--coomand exemple: "chat(sign,cja823)" or "chat(sign)"
 			if(qservices[rq] == nil) then
 				answere = conf.notFound
 			else
 				if(load == "") then
-					load = randomString()
+					load = lf.randomString(qservices[rq].queue)
 				end
 
-				answere = qservices[rq].sing(load)
+				answere = qservices[rq].sign(load)
 				if(answere == true) then
 					answere = load
 				else
@@ -98,7 +100,7 @@ function qsinvok.invoker(command)
 end
 
 --[[LOCAL FUNCTIONS]]
-local function randomString(queue)
+function lf.randomString(queue)
 --[[
 	parameters:
 		queue - the queue where this client will be added
@@ -111,7 +113,7 @@ local function randomString(queue)
 	local num
 	local len = conf.CQNL + math.random(-conf.CQNV, conf.CQNV)
 	local taux = os.time()
-	local srt
+	local str = ""
 
 	if(os.difftime(tp, taux) > tlp) then
 		tp = taux
@@ -121,7 +123,7 @@ local function randomString(queue)
 	repeat
 		repeat
 			repeat
-				num = math.randomseed(48, 122)
+				num = math.random(48, 122)
 			until((num > 47 and num < 58) or (num > 64 and num < 91) or (num > 96 and num < 123))
 			str = str .. string.char(num)
 			len = len - 1
@@ -130,8 +132,3 @@ local function randomString(queue)
 
 	return str
 end
-
---answere = qservices[rs](regS[rs].doPar(load))
---qservices[service].sign()
---qservices[service].revoke()
---qservices[service].update()

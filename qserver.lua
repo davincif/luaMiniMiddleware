@@ -77,7 +77,7 @@ function qservices.chat.sign(cname)
 		error("qservices.chat.sign 1st argument spected to be string but it's "..type(cname))
 	end
 
-	if(qservices.chat.queue[cname] ~= nil) then
+	if(qservices.chat.queue[cname] == nil) then
 		qservices.chat.queue.quantity = qservices.chat.queue.quantity + 1
 		qservices.chat.queue[cname] = {}
 		boolret = true
