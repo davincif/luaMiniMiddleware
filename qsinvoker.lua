@@ -27,16 +27,16 @@ function qsinvok.invoker(command)
 	else
 		local si, sf
 		si = string.find(command, "%(")
-		rq = string.lower(string.sub(command, 1, si-1))
+		rq = string.lower(string.sub(command, 1, si-1)) --service: chat or qpos
 		sf = string.find(command, ",")
 		if(sf == nil) then
 			sf = string.find(command, ")")
 			rs = string.sub(command, si+1, sf-1)
 			load = ""
 		else
-			rs = string.sub(command, si+1, sf-1)
+			rs = string.sub(command, si+1, sf-1) --command to process
 			si = string.find(command, ")")
-			load = string.sub(command, sf+1, si-1)
+			load = string.sub(command, sf+1, si-1) -- name and str
 		end
 		--invoking the correct service with the correct parameters
 		if(rs == "sign") then
@@ -66,7 +66,8 @@ function qsinvok.invoker(command)
 					answere = conf.SPE
 				else
 					if(qservices[rq].revoke(load) == true) then
-						answere = conf.ok
+						--answere = conf.ok
+						answere = conf.close
 					else
 						answere = conf.signE
 					end
@@ -81,7 +82,6 @@ function qsinvok.invoker(command)
 			si = string.find(load, ",")
 			cname = string.sub(load, 1, si-1)
 			str = string.sub(load, si+1)
-
 			sf = qservices[rq].update(cname, str) --reusing the variable
 			if(sf == true) then
 				answere = conf.ok
@@ -89,6 +89,7 @@ function qsinvok.invoker(command)
 				answere = conf.notFound
 			else
 				answere = conf.signE
+				print("entrei no ultimo erro aqui")
 			end
 		else
 			answere = nil

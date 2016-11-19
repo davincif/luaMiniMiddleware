@@ -16,7 +16,6 @@ char* ls_marshall(char *str)
 		newstr[aux] = mflag;
 		newstr[aux+1] = '\0';
 	}
-
 	return newstr;
 }
 

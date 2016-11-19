@@ -63,6 +63,7 @@ qservices.chat.queue = {}
 qservices.chat.queue.quantity = 0
 qservices.chat.queue.s_update = false
 qservices.chat.queue.c_update = false
+
 function qservices.chat.sign(cname)
 -- SERVICE IMPLEMENTATIONS --
 --[[
@@ -80,6 +81,8 @@ function qservices.chat.sign(cname)
 	if(qservices.chat.queue[cname] == nil) then
 		qservices.chat.queue.quantity = qservices.chat.queue.quantity + 1
 		qservices.chat.queue[cname] = {}
+		qservices.chat.queue[cname].s_update = false
+		qservices.chat.queue[cname].c_update = false
 		boolret = true
 		print("QS: client \""..cname.."\" got in the queue")
 	else
@@ -89,6 +92,7 @@ function qservices.chat.sign(cname)
 
 	return boolret
 end
+
 function qservices.chat.revoke(cname)
 -- SERVICE IMPLEMENTATIONS --
 --[[
@@ -118,7 +122,7 @@ function qservices.chat.revoke(cname)
 	return boolret
 end
 
-function qservices.chat.udpate(cname, str)
+function qservices.chat.update(cname, str)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
@@ -129,7 +133,7 @@ function qservices.chat.udpate(cname, str)
 		or nil if the client isn't signed
 ]]
 	local boolret
-	local str = "str"
+	--local str = "str"
 	local count = 1
 
 	if(type(cname) ~= "string") then
@@ -141,14 +145,16 @@ function qservices.chat.udpate(cname, str)
 	if(qservices.chat.queue[cname] ~= nil) then
 		if(qservices.chat.queue[cname].s_update == false and qservices.chat.queue[cname].c_update == false) then
 			qservices.chat.queue[cname].str = str
+			qservices.chat.queue[cname].s_update = true
+			print("QS: client \""..cname.."\" updated chat with msg:  " .. str)
 			boolret = true
 		else
-			boolret = nil
+			print("QS: the previous msg of " .. cname .. " still wasn't processed.")
+			boolret = false --troquei aqui de nil pra false
 		end
-		print("QS: client \""..cname.."\" got out of the queue")
 	else
-		boolret = false
-		print("QS: client \""..cname.."\" already is not in the queue")
+		print("QS: client" .. cname .. " not registered.")
+		boolret = nil -- troquei aqui de false pra nill 
 	end
 
 	return boolret

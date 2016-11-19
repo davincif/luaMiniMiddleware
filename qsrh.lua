@@ -72,6 +72,7 @@ function qsrh.recv(key, flag, proto, ip, port)
 	--do not check all the parameters because the functions in socket.lua already do it
 
 print("recebendo")
+print("KEY: " .. key)
 	if(key == nil) then
 		key = gsh.create()
 		gsh.set(proto, key, ip, port)
@@ -80,7 +81,7 @@ print("recebendo")
 	end
 	
 	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-print("gsh.accept(key)")
+print("gsh.accept(key) " .. key)
 		gsh.accept(key)
 print("////gsh.accept(key)")
 	end
@@ -199,12 +200,15 @@ while(true) do
 				For now, my guess is the the software will still work with this bug, but in a constate state of failure ^^"
 			]]
 			--call invoker and return it's answere
-print("ignore, scmd", ignore, scmd)
+print("scmd: " .. scmd)
 			scmd = qsinvok.invoker(scmd)
-			print("server will answer: "..scmd)
+--print("server will answer: "..scmd)
 			ignore, bytes = qsrh.send(scmd, value)
-			
-			--gsh.deactivate(taux.skey) acho que não vai recisasr desativar, eles vão continuar conectados.
+
+			-- if client wants to end connection
+			if(scmd == conf.close) then
+				gsh.deactivate(ignore) --deactive for revoke only
+			end
 			worked = true
 		end
 	end

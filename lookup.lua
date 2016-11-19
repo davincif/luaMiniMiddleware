@@ -33,7 +33,7 @@ function lookup.search(service)
 				print("service \"" ..service.."\" not registrated at the DNS")
 				ip = sret
 			else
-				print("service \"" ..service.."\" on server: "..sret) --testline
+				--print("service \"" ..service.."\" on server: "..sret) --testline
 
 				si = string.find(sret, "%(")
 				sf = string.find(sret, ",")

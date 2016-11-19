@@ -19,7 +19,7 @@ conf.dnsProto = "udp"			--protocol used to communicate with the DNS
 conf.dnsIP = "127.0.0.1"		--the IP of the DNS server
 conf.dnsPort = 6001				--the port of the DNS server
 conf.notFound = "not found"		--the msg received when the requested service or client is not registered
-conf.ok = "ok"				--the msg received when the requested service or client was performed successfully
+conf.ok = "ok"					--the msg received when the requested service or client was performed successfully
 conf.SPE = "SPE"				-- SPE (Server Parameter Error) in case the client call a function in the server with worng parameters, this will be returned
 conf.CQNL = 6					--CQNL (Client Queue Name Length)
 conf.CQNV = 2					--CQNV (Client Queue Name Variance)
@@ -27,6 +27,7 @@ conf.signE = "already signed"	--sign error (occuer when the same client try to s
 conf.maxPort = math.pow(2,16)-1	--the maximal number to open a port
 conf.minPort = 1023+1-1			--the minimal number to open a port
 conf.output = true				--says if the programs will output mensagens (like a debug)
+conf.close = "closed connec."	--the msg received when the connection is closed 
 
 
 --AUTO ADJUSTMENTS
