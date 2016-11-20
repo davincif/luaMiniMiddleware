@@ -134,15 +134,15 @@ local function opensockets()
 	local tret = {}
 
 	for rkey,rval in pairs(qregS) do
-print(rkey,rval)
 		if(rval.reged == true) then
 			--only open socket to those services who are registrated in the queue server
-			rval.skey = gsh.create()
-print(rval.proto, rval.skey, rval.ip, rval.port)
-			boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
-			if(boolret == false) then
-				print("could not set socktable of queue service \""..rkey.."\"")
-				os.exit()
+			if(rval.skey == nil) then
+				rval.skey = gsh.create()
+				boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
+				if(boolret == false) then
+					print("could not set socktable of queue service \""..rkey.."\"")
+					os.exit()
+				end
 			end
 			table.insert(tret, rval.skey)
 		end
@@ -181,6 +181,7 @@ while(true) do
 			gsh.accept(value)
 			worked = true
 		end
+		opensockets()
 	end
 
 	taux = gsh.is_readable(keyt)

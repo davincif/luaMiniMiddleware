@@ -96,7 +96,7 @@ local function findS()
 		none
 	return:
 		none
-	PS.: this function's duty is to find the Services address of the QS in the DNS and store it, and warn the QS about this server IP and Port.
+	PS.: this function's duty is to find the Services address of the QS in the DNS and store it.
 ]]
 	local skey
 	local si, sf
@@ -124,18 +124,6 @@ local function findS()
 
 	gsh.close(skey)
 	skey = nil
-
-	conf.print("warning the Queue Server about who is the correct server to send data...")
-	for rkey,rval in pairs(regS) do
-print(rkey,rval)
-print("sending to", rval.QS_IP, rval.QS_PORT)
-		skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", skey, rval.QS_IP, rval.QS_PORT, {proto = rval.proto, ip = rval.ip, port = rval.port})
-print(skey, bytes, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
-		skey, sret = srh.recv(skey, false)
-print(skey, sret)
-	end
-
-	gsh.close(skey)
 end
 
 local function opensockets()
@@ -148,15 +136,16 @@ local function opensockets()
 	local boolret
 	local tret = {}
 
+	conf.print("warning the Queue Server about who is the correct server to send data...")
 	for rkey,rval in pairs(regS) do
 		if(rval.reged == true) then
-			--only open socket to those services who are registrated in the queue server
-			rval.skey = gsh.create()
-			boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
-			if(boolret == false) then
-				print("could not set socktable of service \""..rkey.."\"")
-				os.exit()
-			end
+			--only open socreatecket to those services who are registrated in the queue server
+print(rkey,rval)
+print("sending to", rval.QS_IP, rval.QS_PORT)
+			rval.skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.skey, rval.QS_IP, rval.QS_PORT, {proto = rval.proto, ip = rval.ip, port = rval.port})
+print(rval.skey, bytes, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
+			rval.skey, sret = srh.recv(rval.skey, false)
+print(rval.skey, sret)
 			table.insert(tret, rval.skey)
 		end
 	end
@@ -173,9 +162,9 @@ local taux
 
 findS()
 keyt = opensockets()
-
 print("leave opensockets()")
-while(true) do
+
+--[[while(true) do
 	worked = false
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
@@ -205,6 +194,6 @@ print("is_readable")
 	if(worked == false) then
 		lsok.sleep(STP)
 	end
-end
+end]]
 
 gsh.closeAll()
