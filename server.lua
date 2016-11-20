@@ -1,13 +1,22 @@
 --[[	SERVER	]]
+io.write("QS password: ")
+local QSpassword = io.read()
+print("stored")
+
 services = {} --all services my server can provide
 services.SERVER_IP = "127.0.0.1"
+
+--	PASSWORD FUNCTION	--
+function services.getPassword()
+	return QSpassword
+end
 
 --	SERVICES REGISTRATION	--
 regS = {} --registrated Services
 --[[
 regS[service] = {}
-regS[service].ip = the ip where the service shall be registrated
-regS[service].port = the port where the service shall be registrated
+regS[service].ip = the ip where the service shall be registrated on 	QS
+regS[service].port = the port where the service shall be registrated on QS
 regS[service].reged = false --if this service already was registered
 regS[service].proto = protocol to be used (usualy conf.proto)
 regS[service].QS_IP = nil

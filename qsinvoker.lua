@@ -31,10 +31,10 @@ function qsinvok.invoker(command)
 		sf = string.find(command, ",")
 		if(sf == nil) then
 			sf = string.find(command, ")")
-			rs = string.sub(command, si+1, sf-1)
+			rs = string.lower(string.sub(command, si+1, sf-1))
 			load = ""
 		else
-			rs = string.sub(command, si+1, sf-1)
+			rs = string.lower(string.sub(command, si+1, sf-1))
 			si = string.find(command, ")")
 			load = string.sub(command, sf+1, si-1)
 		end
@@ -42,6 +42,8 @@ function qsinvok.invoker(command)
 		if(rs == "sign") then
 			--sign("clientName")
 			--coomand exemple: "chat(sign,cja823)" or "chat(sign)"
+			local name = ""
+
 			if(qservices[rq] == nil) then
 				answere = conf.notFound
 			else
@@ -49,11 +51,34 @@ function qsinvok.invoker(command)
 					load = lf.randomString(qservices[rq].queue)
 				end
 
-				answere = qservices[rq].sign(load)
-				if(answere == true) then
-					answere = load
+				sf = string.find(load, ",")
+				if(sf ~= nil) then
+					name = string.sub(load, 1, sf-1)
+				end
+				if(name == "server") then
+					--server contact
+					--exemple: "chat(sign,server,password,ip,port)"
+					local password
+
+					si = string.find(load, ",", sf+1)
+					password = string.sub(load, sf+1, si-1)
+					if(qservices.comparePass(password) ~= true) then
+						conf.print("wrong password!")
+						answere = conf.SPE
+					else
+						sf = string.find(load, ",", si+1)
+						qregS[rq].serverIP = string.sub(load, si+1, sf-1)
+						qregS[rq].serverPORT = string.sub(load, sf+1)
+						answere = conf.ok
+print(qregS[rq].serverIP, qregS[rq].serverPORT)
+					end
 				else
-					answere = conf.signE
+					answere = qservices[rq].sign(load)
+					if(answere == true) then
+						answere = load
+					else
+						answere = conf.signE
+					end
 				end
 			end
 		elseif(rs == "revoke") then
@@ -97,6 +122,20 @@ function qsinvok.invoker(command)
 	end
 
 	return answere
+end
+
+function qsinvok.QS_update()
+--[[
+	parameters:
+		none
+	return:
+		none
+	PS.: this functions will actualize any needed information from the QS to the server
+]]
+
+	for key,value in pairs(qregS) do
+		print(key, value, value.serverIP, value.serverPORT)
+	end
 end
 
 --[[LOCAL FUNCTIONS]]

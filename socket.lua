@@ -8,10 +8,8 @@ if(proto == lsok.proto.tcp) then
 	--socks[key].csock = future client sock, or mysock if you're the client
 	socks[key].active = false --says if this socket already was accept, ou connecto to another one.
 end
-if(proto == lsok.proto.udp) then
-	socks[key].ip = ip of the client who sent the last msg to this socket
-	socks[key].port = port of the client who sent the last msg to this socket
-end
+socks[key].ip = ip of the client who sent the last msg to this socket
+socks[key].port = port of the client who sent the last msg to this socket
 socks[key].proto = tcp ou udp ~up to now~
 socks[key].openedAt = os.time()
 socks[key].lastUse = socks[key].openedAt
@@ -453,6 +451,31 @@ function gsh.getProto(key)
 	end
 
 	return ret
+end
+
+function gsh.getIpPort(key)
+--[[
+	parameters:
+		key - the key to an valid already created socket
+	return:
+		the ip and port of the last communication made with this socket on success, nil if socks[key] does not exist or if the socket had never been connected
+]]
+	local ip
+	local port
+
+	if(type(key) ~= "string") then
+		error("LUA: gsh.getIpPort 1st argument spected to be string but it's " .. type(key))
+	end
+
+	if(socks[key] == nil or type(socks[key]) ~= "table") then
+		ip = nil
+		port = nil
+	else
+		ip = socks[key].ip
+		port = socks[key].port
+	end
+
+	return ip, port
 end
 
 function gsh.isActive(key)

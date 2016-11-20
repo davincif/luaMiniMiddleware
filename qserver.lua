@@ -1,4 +1,8 @@
 --[[	SERVER	]]
+io.write("password: ")
+local QSpassword = io.read()
+print("stored")
+
 qservices = {} --all services my server can provide
 qservices.SERVER_IP = "127.0.0.1"
 --[[
@@ -20,6 +24,11 @@ qservices[service].queue[client].s_update = false --set true to update informati
 qservices[service].queue[client].c_update = false --set true only if this information already was processed by the server and is ready to be set to the client
 ]]
 
+--	PASSWORD FUNCTION	--
+function qservices.comparePass(password)
+	return password == QSpassword
+end
+
 --	SERVICES REGISTRATION	--
 qregS = {} --registrated Services
 --[[
@@ -28,8 +37,8 @@ qregS[service].ip = the ip where the service shall be registrated
 qregS[service].port = the port where the service shall be registrated
 qregS[service].reged = false --if this service already was registered
 regS[service].proto = protocol to be used (usualy conf.proto)
-qregS[service].serverIP = nil
-qregS[service].serverPORT = nil
+qregS[service].serverIP = nil --the ip of the server who is gonna process the this queue's information
+qregS[service].serverPORT = nil --the port of the server who is gonna process the this queue's information
 --the ip and port of the server that will process the information of this queue will be
 -- automatically filled after the queue server and server start
 qregS[service].doPar(str) - call this functions to return the correct paremetres in "str" to "service"
@@ -63,13 +72,15 @@ qservices.chat.queue = {}
 qservices.chat.queue.quantity = 0
 qservices.chat.queue.s_update = false
 qservices.chat.queue.c_update = false
-function qservices.chat.sign(cname)
+function qservices.chat.sign(cname, password)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
 		cname - the name of the client who want to sign on this queue
+		password - the password of this client (if needed)
 	return:
 		return true on success, false otherwise (that only occurs if the client is already signed)
+	PS.: currently, the password is only used to check the altentidy of the server
 ]]
 	local boolret
 
@@ -77,6 +88,7 @@ function qservices.chat.sign(cname)
 		error("qservices.chat.sign 1st argument spected to be string but it's "..type(cname))
 	end
 
+	--ordinary client contact
 	if(qservices.chat.queue[cname] == nil) then
 		qservices.chat.queue.quantity = qservices.chat.queue.quantity + 1
 		qservices.chat.queue[cname] = {}

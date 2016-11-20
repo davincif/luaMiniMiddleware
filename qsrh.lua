@@ -71,7 +71,6 @@ function qsrh.recv(key, flag, proto, ip, port)
 
 	--do not check all the parameters because the functions in socket.lua already do it
 
-print("recebendo")
 	if(key == nil) then
 		key = gsh.create()
 		gsh.set(proto, key, ip, port)
@@ -80,9 +79,7 @@ print("recebendo")
 	end
 	
 	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-print("gsh.accept(key)")
 		gsh.accept(key)
-print("////gsh.accept(key)")
 	end
 
 	sret = gsh.recv(key, flag)
@@ -137,9 +134,11 @@ local function opensockets()
 	local tret = {}
 
 	for rkey,rval in pairs(qregS) do
+print(rkey,rval)
 		if(rval.reged == true) then
 			--only open socket to those services who are registrated in the queue server
 			rval.skey = gsh.create()
+print(rval.proto, rval.skey, rval.ip, rval.port)
 			boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
 			if(boolret == false) then
 				print("could not set socktable of queue service \""..rkey.."\"")
@@ -176,7 +175,6 @@ while(true) do
 
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
-
 	if(taux ~= nil) then
 		conf.print("accept request identified")
 		for key, value in pairs(taux) do
@@ -187,6 +185,7 @@ while(true) do
 
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
+print("is_readable!!")
 		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
 			local ignore
@@ -200,14 +199,16 @@ while(true) do
 			]]
 			--call invoker and return it's answere
 print("ignore, scmd", ignore, scmd)
-			scmd = qsinvok.invoker(scmd)
-			print("server will answer: "..scmd)
-			ignore, bytes = qsrh.send(scmd, value)
-			
-			--gsh.deactivate(taux.skey) acho que não vai recisasr desativar, eles vão continuar conectados.
-			worked = true
+			if(scmd ~= nil) then
+				scmd = qsinvok.invoker(scmd)
+				print("server will answer: "..scmd)
+				ignore, bytes = qsrh.send(scmd, value)
+				worked = true
+			end
 		end
 	end
+
+	--qsinvok.QS_update()
 
 	if(worked == false) then
 		lsok.sleep(STP)

@@ -94,7 +94,7 @@ while(true) do
 	else
 		sockgate, scmd = drh.recv(sockgate, false)
 	end
-	print("command recreived: "..scmd)
+	conf.print("command recreived: "..scmd)
 
 	--process the request
 	si = string.find(scmd, "%(")
@@ -108,7 +108,7 @@ while(true) do
 		ip =string.sub(scmd, sf+1, si-1)
 		sf = string.find(scmd, ")", si+1)
 		port = tonumber(string.sub(scmd, si+1, sf-1))
-		print("processed as: (service, ip, port) ".."-> ("..service..","..ip..","..port..")")
+		conf.print("processed as: (service, ip, port) ".."-> ("..service..","..ip..","..port..")")
 
 		--call the corrent function
 		asnwere = dns.add(service, ip, port)
@@ -118,7 +118,7 @@ while(true) do
 	elseif(cmd == "search") then
 		sf = string.find(scmd, ")")
 		service = string.lower(string.sub(scmd, si+1, sf-1))
-		print("processed as: (service)", "("..service..")")
+		conf.print("processed as: (service)", "("..service..")")
 
 		--call the corrent function
 		ip, port = dns.search(service)

@@ -108,9 +108,9 @@ static int socket_connect()
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_connect' must be integer\n");
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_connect' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_connect' must be string\n");
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3st argument of function 'socket_connect' must be integer\n");
+		luaL_error(LCS, "3rd argument of function 'socket_connect' must be integer\n");
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -172,9 +172,9 @@ static int socket_bind()
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_bind' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_bind' must be string\n");
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "3rd argument of function 'socket_bind' must be integer\n");
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -204,11 +204,13 @@ static int socket_accept()
 {
 /*
 	lua calling: like socket_accept(int socket)
+	returns a new socket, it's ip and port
 	PS.: this is a blocking function
 */
 	socklen_t addr_size;
-	struct sockaddr_storage serverStorage;
-	int newSocket;
+	struct sockaddr_in serverStorage;
+	int newSocket, port;
+	char *ip;
 
 	if(!lua_isinteger(LCS, -1))
 		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
@@ -216,12 +218,16 @@ static int socket_accept()
 	addr_size = sizeof(serverStorage);
 	//this is a blockinf function
 	newSocket = accept(lua_tointeger(LCS, -1), (struct sockaddr *) &serverStorage, &addr_size);
+	ip = inet_ntoa(serverStorage.sin_addr);
+	port = ntohs(serverStorage.sin_port);
 
 	if(newSocket == -1)
 		printf("\tError accepting: %s\n", strerror(errno));
 
 	lua_pushinteger(LCS, newSocket);
-	return 1;
+	lua_pushstring(LCS, ip);
+	lua_pushinteger(LCS, port);
+	return 3;
 }
 
 static int socket_send()
@@ -230,6 +236,7 @@ static int socket_send()
 	lua calling: like
 		socket_send(int socket, char *message) if TPC
 		or socket_send(int socket, char *message, char *ip, int port) if UPD
+		return the amount of bytes send, if 0 means that the socket who recved the data was ordely closed
 */
 	char *saux, *msg, *ip, msg_size[MAX_MSG_SIZE+1];
 	int bytesent, sock, msglen, port, proto;
@@ -239,7 +246,7 @@ static int socket_send()
 	{
 		case 2: //TCP
 			if(!lua_isinteger(LCS, -2))
-				luaL_error(LCS, "2st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be integer\n");
 			else if(!lua_isstring(LCS, -1))
 				luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
 
@@ -254,11 +261,11 @@ static int socket_send()
 
 		case 4: //UDP
 			if(!lua_isinteger(LCS, -4))
-				luaL_error(LCS, "4st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "4th argument of function 'socket_send' must be integer\n");
 			else if(!lua_isstring(LCS, -3))
-				luaL_error(LCS, "3st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "3rd argument of function 'socket_send' must be string\n");
 			else if(!lua_isstring(LCS, -2))
-				luaL_error(LCS, "2st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be string\n");
 			else if(!lua_isinteger(LCS, -1))
 				luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
 
@@ -305,7 +312,7 @@ static int socket_send()
 		break;
 	
 		case 0:
-			printf("Error! No bytes sent: %s\n", strerror(errno));
+			printf("Error! No bytes sent of msg size: %s\n", strerror(errno));
 		break;
 		
 		default:
@@ -339,9 +346,9 @@ static int socket_recv()
 {
 /*
 	lua calling: like socket_recv(int socket, int protocol)
-	returns the string received if TCP
+	returns the string received if TCP, or nil the the socket receiv 0 bytes, what means that the socket who sent the data was ordely closed
 	or string received, IP and PORT received if UDP
-	OBS.: this is a 'blocking function'
+	PS.: this is a 'blocking function'
 */
 	int byterecv, sock, msglen, proto, port, ret = 1;
 	char *msg = NULL, msg_size[MAX_MSG_SIZE+1], *ip;
@@ -373,7 +380,7 @@ static int socket_recv()
 		default:
 			luaL_error(LCS, "Required protocol not recognized\n");
 	}
-	ls_unmarshall(msg_size);
+
 	//chekcing if send worked fine
 	switch(byterecv)
 	{
@@ -382,10 +389,11 @@ static int socket_recv()
 		break;
 
 		case 0:
-			printf("Error! No bytes recv: %s\n", strerror(errno));
+			printf("Error! No bytes recv of msg size: %s\n", strerror(errno));
 		break;
 
 		default:
+			ls_unmarshall(msg_size);
 			msglen = atoi(msg_size);
 			msg = (char*) malloc(sizeof(char)*(msglen+1));
 			msg[msglen] = '\0';

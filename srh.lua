@@ -42,6 +42,7 @@ function srh.send(strmsg, key, ip, port, socktable)
 		end
 
 		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
+print("connect", key, ip, port)
 			gsh.connect(key, ip, port)
 		end
 
@@ -95,21 +96,22 @@ local function findS()
 		none
 	return:
 		none
+	PS.: this function's duty is to find the Services address of the QS in the DNS and store it, and warn the QS about this server IP and Port.
 ]]
 	local skey
 	local si, sf
 	local sret --string returned
 	local bytes
 
-	print("searching services on Queue Server...")
+	conf.print("searching services on Queue Server...")
 	for rkey,rval in pairs(regS) do
 		skey, bytes = srh.send("SEARCH("..rkey..")", skey, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
 		skey, sret = srh.recv(skey, false)
 		if(sret == conf.notFound) then
-			print("DNS returned error: "..sret)
-			print("service \"" ..rkey.."\" not registrated at the DNS")
+			conf.print("DNS returned error: "..sret)
+			conf.print("service \"" ..rkey.."\" not registrated at the DNS")
 		else
-			print("service \"" ..rkey.."\" on server: "..sret) --testline
+			conf.print("service \"" ..rkey.."\" on server: "..sret) --testline
 
 			si = string.find(sret, "%(")
 			sf = string.find(sret, ",")
@@ -118,6 +120,19 @@ local function findS()
 			rval.QS_PORT = tonumber(string.sub(sret, sf+1, si-1))
 			rval.reged = true
 		end
+	end
+
+	gsh.close(skey)
+	skey = nil
+
+	conf.print("warning the Queue Server about who is the correct server to send data...")
+	for rkey,rval in pairs(regS) do
+print(rkey,rval)
+print("sending to", rval.QS_IP, rval.QS_PORT)
+		skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", skey, rval.QS_IP, rval.QS_PORT, {proto = rval.proto, ip = rval.ip, port = rval.port})
+print(skey, bytes, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
+		skey, sret = srh.recv(skey, false)
+print(skey, sret)
 	end
 
 	gsh.close(skey)
@@ -159,11 +174,13 @@ local taux
 findS()
 keyt = opensockets()
 
+print("leave opensockets()")
 while(true) do
 	worked = false
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
 	if(taux ~= nil) then
+print("is_acceptable")
 		for key, value in pairs(taux) do
 			gsh.accept(taux.skey)
 			worked = true
@@ -172,11 +189,12 @@ while(true) do
 
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
+print("is_readable")
 		for key, value in pairs(taux) do
 			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
 			--call invoker and return it's answere
 			scmd = invok.invoker(scmd)
-			print("server will answer: "..scmd)
+			conf.print("server will answer: "..scmd)
 			taux.skey, bytes = srh.send(scmd, taux.skey)
 			
 			gsh.deactivate(taux.skey)
