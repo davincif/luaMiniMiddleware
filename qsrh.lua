@@ -186,7 +186,6 @@ while(true) do
 
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
-print("is_readable!!")
 		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
 			local ignore
@@ -206,11 +205,6 @@ print("ignore, scmd", ignore, scmd)
 				ignore, bytes = qsrh.send(scmd, value)
 				worked = true
 			end
-
-			scmd = qsinvok.invoker(scmd)
-print("server will answer: "..scmd)
-			ignore, bytes = qsrh.send(scmd, value)
-
 			-- if client wants to end connection
 			if(scmd == conf.close) then
 				gsh.deactivate(ignore) --deactive for revoke only

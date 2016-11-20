@@ -21,6 +21,7 @@ function qsinvok.invoker(command)
 	local rq --rq = resquested queue
 	local load
 
+print("comando ", command)
 	--coomand exemple: "chat(update,cja823,'ei vey bora logo!')"
 	if(type(command) ~= "string") then
 		error("LUA: 1st argument of qsinvok.invoker spected to be string but it's " .. type(command))

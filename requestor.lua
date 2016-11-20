@@ -45,7 +45,7 @@ conf.print("sending from: "..request.clientIP.."   "..request.clientPort)
 					sret = ""
 					print("LUA: request.chat: sign to 'chat' service not found at the server")
 				else
-					print("sending msg: " .. strm.load)
+					print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
 					chat.skey, bytes = crh.send(strm.service.."(update,"..chat.cname..","..strm.load..")", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
 
 					if(chat.skey ~= "" and chat.skey ~= nil) then
@@ -55,7 +55,7 @@ conf.print("sending from: "..request.clientIP.."   "..request.clientPort)
 				end
 			else
 				print("client " .. chat.cname .. "registed.")
-				print("sending msg: " .. strm.load)
+				print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
 				chat.skey, bytes = crh.send(strm.service.."(update,"..chat.cname..","..strm.load..")", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
 
 				if(chat.skey ~= "" and chat.skey ~= nil) then
