@@ -164,12 +164,13 @@ findS()
 keyt = opensockets()
 print("leave opensockets()")
 
---[[while(true) do
+while(true) do
 	worked = false
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
 	if(taux ~= nil) then
 print("is_acceptable")
+		conf.print("accept request identified")
 		for key, value in pairs(taux) do
 			gsh.accept(taux.skey)
 			worked = true
@@ -179,6 +180,7 @@ print("is_acceptable")
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
 print("is_readable")
+		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
 			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
 			--call invoker and return it's answere
@@ -194,6 +196,6 @@ print("is_readable")
 	if(worked == false) then
 		lsok.sleep(STP)
 	end
-end]]
+end
 
 gsh.closeAll()
