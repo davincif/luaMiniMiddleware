@@ -21,7 +21,7 @@ function qsinvok.invoker(command)
 	local rq --rq = resquested queue
 	local load
 
-print("comando ", command)
+	conf.print("command: "..command)
 	--coomand exemple: "chat(update,cja823,'ei vey bora logo!')"
 	if(type(command) ~= "string") then
 		error("LUA: 1st argument of qsinvok.invoker spected to be string but it's " .. type(command))
@@ -69,9 +69,8 @@ print("comando ", command)
 					else
 						sf = string.find(load, ",", si+1)
 						qregS[rq].serverIP = string.sub(load, si+1, sf-1)
-						qregS[rq].serverPORT = string.sub(load, sf+1)
+						qregS[rq].serverPORT = tonumber(string.sub(load, sf+1))
 						answere = conf.ok
-print(qregS[rq].serverIP, qregS[rq].serverPORT)
 					end
 				else
 					answere = qservices[rq].sign(load)
@@ -124,20 +123,6 @@ print(qregS[rq].serverIP, qregS[rq].serverPORT)
 	end
 
 	return answere
-end
-
-function qsinvok.QS_update()
---[[
-	parameters:
-		none
-	return:
-		none
-	PS.: this functions will actualize any needed information from the QS to the server
-]]
-
-	for key,value in pairs(qregS) do
-		print(key, value, value.serverIP, value.serverPORT)
-	end
 end
 
 --[[LOCAL FUNCTIONS]]

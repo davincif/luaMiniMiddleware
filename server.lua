@@ -47,10 +47,11 @@ function regS.chat.doPar(str)
 ]]
 	return str
 end
-function services.chat(str)
+function services.chat(cname, str)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
+		cname - the name of the client who already signnd on this queue
 		str - string you want to hear the acho
 	return:
 		return str in success, or false otherwise
@@ -62,7 +63,7 @@ function services.chat(str)
 		sret = false
 	else
 		print("SERVER: chat invoked for "..str) --testline
-		sret = str
+		sret = ">"..str
 	end
 
 	return sret
@@ -97,7 +98,34 @@ function regS.qpos.doPar(str)
 	print("regS.qpos.doPar: "..command.."("..cname..", "..x..", "..y..")")
 	return command, cname, x, y
 end
-function services.qpos(command, cname, x, y)
+services.qpos = {}
+services.qpos.dellist = {}
+services.qpos.dellist.quantity = 0
+services.qpos.queue = {}
+services.qpos.queue.quantity = 0
+services.qpos.queue.s_update = false
+services.qpos.queue.c_update = false
+function services.qpos.sign(cname, password)
+-- SERVICE IMPLEMENTATIONS --
+--[[
+	parameters:
+		cname - the name of the client who want to sign on this queue
+		password - the password of this client (if needed)
+	return:
+		return true on success, false otherwise (that only occurs if the client is already signed)
+	PS.: currently, the password is only used to check the altentidy of the server
+]]
+end
+function services.qpos.revoke(cname)
+-- SERVICE IMPLEMENTATIONS --
+--[[
+	parameters:
+		cname - the name of the client who want to sign on this queue
+	return:
+		return true on success, false otherwise (that only occurs if the client already isn't signed)
+]]
+end
+function services.qpos.update(command, cname, x, y)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:

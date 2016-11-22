@@ -141,6 +141,10 @@ function gsh.connect(key, ip, port)
 	elseif(socks[key].proto ~= lsok.proto.tcp) then
 		print("LUA: only tcp protocol needs to connect")
 		ok = false
+	elseif(type(ip) ~= "string") then
+		error("LUA: gsh.connect, 2nd argument should be string, but it's "..type(ip))
+	elseif(type(port) ~= "number") then
+		error("LUA: gsh.connect, 3rd argument should be number, but it's "..type(port))
 	else
 		ok = true
 		if(lsok.connect(socks[key].mysock, ip, port) == false) then

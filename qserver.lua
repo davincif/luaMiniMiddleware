@@ -96,10 +96,10 @@ function qservices.chat.sign(cname, password)
 		qservices.chat.queue[cname].s_update = false
 		qservices.chat.queue[cname].c_update = false
 		boolret = true
-		print("QS: client \""..cname.."\" got in the queue")
+		conf.print("QS: client \""..cname.."\" got in the queue")
 	else
 		boolret = false
-		print("QS: client \""..cname.."\" is already in the queue")
+		conf.print("QS: client \""..cname.."\" is already in the queue")
 	end
 
 	return boolret
@@ -156,6 +156,7 @@ function qservices.chat.update(cname, str)
 
 	if(qservices.chat.queue[cname] ~= nil) then
 		if(qservices.chat.queue[cname].s_update == false and qservices.chat.queue[cname].c_update == false) then
+			qservices.chat.queue.s_update = true
 			qservices.chat.queue[cname].str = str
 			qservices.chat.queue[cname].s_update = true
 			print("QS: client \""..cname.."\" updated chat with msg:  " .. str)
@@ -202,7 +203,34 @@ function qregS.qpos.doPar(str)
 	print("qregS.qpos.doPar: "..command.."("..cname..", "..x..", "..y..")")
 	return command, cname, x, y
 end
-function qservices.qpos(command, cname, x, y)
+qservices.qpos = {}
+qservices.qpos.dellist = {}
+qservices.qpos.dellist.quantity = 0
+qservices.qpos.queue = {}
+qservices.qpos.queue.quantity = 0
+qservices.qpos.queue.s_update = false
+qservices.qpos.queue.c_update = false
+function qservices.qpos.sign(cname, password)
+-- SERVICE IMPLEMENTATIONS --
+--[[
+	parameters:
+		cname - the name of the client who want to sign on this queue
+		password - the password of this client (if needed)
+	return:
+		return true on success, false otherwise (that only occurs if the client is already signed)
+	PS.: currently, the password is only used to check the altentidy of the server
+]]
+end
+function qservices.qpos.revoke(cname)
+-- SERVICE IMPLEMENTATIONS --
+--[[
+	parameters:
+		cname - the name of the client who want to sign on this queue
+	return:
+		return true on success, false otherwise (that only occurs if the client already isn't signed)
+]]
+end
+function qservices.qpos.update(command, cname, x, y)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:

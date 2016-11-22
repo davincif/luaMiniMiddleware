@@ -151,11 +151,49 @@ local function opensockets()
 	return tret
 end
 
-local function FindServiceBySock(sock)
+local function QS_update()
 --[[
 	parameters:
+		none
 	return:
+		none
+	PS.: this functions will actualize any needed information from the QS to the server
 ]]
+	local answere
+	local bytes
+
+	for serv,value in pairs(qregS) do
+		--what services to be updated on the server?
+
+		if(qservices[serv].queue.s_update == true) then
+			--this service needs updated on server
+			conf.print("updating \""..serv.."\" queue on the server")
+			for qsckey,qscvalue in pairs(qservices[serv].queue) do
+				--in this service, what are the client that needs update on server?
+				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].s_update == true) then
+					--update the client in qsckey
+					conf.print("\tupdating \""..qsckey.."\" queue client on the server")
+print("update("..")", qregS[serv].skey, qregS[serv].serverIP, qregS[serv].serverPORT, qregS[serv].proto, qregS[serv].ip, qregS[serv].port)
+					qregS[serv].skey, bytes = qsrh.send("update("..")", qregS[serv].skey, qregS[serv].serverIP, qregS[serv].serverPORT, {proto = qregS[serv].proto, ip = qregS[serv].ip, port = qregS[serv].port})
+					qregS[serv].skey, answere = qsrh.recv(qregS[serv].skey, false)
+					conf.print("\t"..answere)
+				end
+			end
+		end
+
+		if(qservices[serv].queue.c_update == true) then
+			--does this service needs to be updated on the client?
+			conf.print("\""..serv.."\" queue need to be updated on the client")
+			for qsckey,qscvalue in pairs(qservices[serv].queue) do
+				--in this service, what are the client that needs update on client?
+				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].c_update == true) then
+					--update the client in qsckey
+					conf.print("updating \""..qsckey.."\" queue client on the server")
+					conf.print("\t"..answere)
+				end
+			end
+		end
+	end
 end
 
 --[[	RUNNING SERVER	]]
@@ -184,6 +222,7 @@ while(true) do
 		opensockets()
 	end
 
+	--receive a new msg from a already connected socket (in tcp case)
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
 		conf.print("identified msg waiting")
@@ -198,10 +237,9 @@ while(true) do
 				For now, my guess is the the software will still work with this bug, but in a constate state of failure ^^"
 			]]
 			--call invoker and return it's answere
-print("ignore, scmd", ignore, scmd)
 			if(scmd ~= nil) then
 				scmd = qsinvok.invoker(scmd)
-				print("server will answer: "..scmd)
+				conf.print("server will answer: "..scmd)
 				ignore, bytes = qsrh.send(scmd, value)
 				worked = true
 			end
@@ -213,7 +251,7 @@ print("ignore, scmd", ignore, scmd)
 		end
 	end
 
-	--qsinvok.QS_update()
+	QS_update()
 
 	if(worked == false) then
 		lsok.sleep(STP)

@@ -11,7 +11,7 @@ static int socket_open()
 
 	if(!lua_isinteger(LCS, -1))
 	{
-		luaL_error(LCS, "1st argument of function 'socket_open' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_open' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 		sock = 0;
 	}else{
 		switch(lua_tointeger(LCS, -1))
@@ -45,7 +45,7 @@ static int socket_close()
 	LS_Bool ret;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_close' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	if(close(lua_tointeger(LCS, -1)) == -1)
 	{
@@ -69,9 +69,9 @@ static int socket_shutdown()
 	enum LS_SHUT_MODE shutmode;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	shutmode = lua_tointeger(LCS, -1);
 
@@ -106,11 +106,11 @@ static int socket_connect()
 	LS_Bool ret = LS_True;
 	
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_connect' must be integer\n");
+		luaL_error(LCS, "3st argument of function 'socket_connect' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2nd argument of function 'socket_connect' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_connect' must be string, but it's %s\n", luaL_typename(LCS, -2));
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3rd argument of function 'socket_connect' must be integer\n");
+		luaL_error(LCS, "1rd argument of function 'socket_connect' must be integer, but it's %s\n", luaL_typename(LCS, -3));
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -142,7 +142,7 @@ static int socket_listen()
 	int sock;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	sock = lua_tointeger(LCS, -1);
 
 	if(listen(sock, 1) == 0)
@@ -170,11 +170,11 @@ static int socket_bind()
 	LS_Bool ret;
 	
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2nd argument of function 'socket_bind' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_bind' must be string, but it's %s\n", luaL_typename(LCS, -2));
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3rd argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "3rd argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -3));
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -213,7 +213,7 @@ static int socket_accept()
 	char *ip;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	addr_size = sizeof(serverStorage);
 	//this is a blockinf function
@@ -246,9 +246,9 @@ static int socket_send()
 	{
 		case 2: //TCP
 			if(!lua_isinteger(LCS, -2))
-				luaL_error(LCS, "2nd argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 			else if(!lua_isstring(LCS, -1))
-				luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "1st argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -1));
 
 			//getting arguments
 			sock = lua_tointeger(LCS, -2);
@@ -261,13 +261,13 @@ static int socket_send()
 
 		case 4: //UDP
 			if(!lua_isinteger(LCS, -4))
-				luaL_error(LCS, "4th argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "4th argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -4));
 			else if(!lua_isstring(LCS, -3))
-				luaL_error(LCS, "3rd argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "3rd argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -3));
 			else if(!lua_isstring(LCS, -2))
-				luaL_error(LCS, "2nd argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -2));
 			else if(!lua_isinteger(LCS, -1))
-				luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "1st argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 			//getting arguments
 			sock = lua_tointeger(LCS, -4);
@@ -356,9 +356,9 @@ static int socket_recv()
 	socklen_t socklen;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "2nd argument of function 'socket_recv' must be integer\n");
+		luaL_error(LCS, "2nd argument of function 'socket_recv' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	sock = lua_tointeger(LCS, -2);
 	proto = lua_tointeger(LCS, -1);
@@ -561,7 +561,7 @@ static int ls_is_proto_valid()
 	enum LS_PROTO_TYPE proto;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'ls_is_proto_valid' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'ls_is_proto_valid' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	proto = lua_tointeger(LCS, -1);
 
@@ -580,7 +580,7 @@ static int ls_is_socket_open()
 	char buff[] = "test";
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'ls_is_socket_open' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'ls_is_socket_open' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	proto = lua_tointeger(LCS, -1);
 

@@ -42,7 +42,6 @@ function srh.send(strmsg, key, ip, port, socktable)
 		end
 
 		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-print("connect", key, ip, port)
 			gsh.connect(key, ip, port)
 		end
 
@@ -140,15 +139,14 @@ local function opensockets()
 	for rkey,rval in pairs(regS) do
 		if(rval.reged == true) then
 			--only open socreatecket to those services who are registrated in the queue server
-print(rkey,rval)
-print("sending to", rval.QS_IP, rval.QS_PORT)
+			conf.print("service: "..rkey.."...")
 			rval.skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.skey, rval.QS_IP, rval.QS_PORT, {proto = rval.proto, ip = rval.ip, port = rval.port})
-print(rval.skey, bytes, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
 			rval.skey, sret = srh.recv(rval.skey, false)
-print(rval.skey, sret)
+			conf.print("\t"..sret)
 			table.insert(tret, rval.skey)
 		end
 	end
+	conf.print("done")
 
 	return tret
 end
@@ -162,14 +160,13 @@ local taux
 
 findS()
 keyt = opensockets()
-print("leave opensockets()")
 
 while(true) do
 	worked = false
+
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
 	if(taux ~= nil) then
-print("is_acceptable")
 		conf.print("accept request identified")
 		for key, value in pairs(taux) do
 			gsh.accept(taux.skey)
@@ -177,9 +174,9 @@ print("is_acceptable")
 		end
 	end
 
+	--receive a new msg from a already connected socket (in tcp case)
 	taux = gsh.is_readable(keyt)
 	if(taux ~= nil) then
-print("is_readable")
 		conf.print("identified msg waiting")
 		for key, value in pairs(taux) do
 			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
