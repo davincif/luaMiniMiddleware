@@ -2,6 +2,5 @@
 require "cproxy"
 
 print(cproxy.chat("Bora la bicho!"))
-while(true) do
-end
+io.read()
 --print(cproxy.chat("Go Go!!"))

@@ -214,9 +214,9 @@ while(true) do
 	--receive the request from a new conection
 	taux = gsh.is_acceptable(keyt)
 	if(taux ~= nil) then
-		conf.print("accept request identified")
+		conf.print("accept request identified in")
 		for key, value in pairs(taux) do
-			gsh.accept(value)
+			conf.print("\t", gsh.accept(value))
 			worked = true
 		end
 		opensockets()

@@ -346,7 +346,7 @@ static int socket_recv()
 {
 /*
 	lua calling: like socket_recv(int socket, int protocol)
-	returns the string received if TCP, or nil the the socket receiv 0 bytes, what means that the socket who sent the data was ordely closed
+	returns the string received if TCP, or nil if the socket receiv 0 bytes, what means that the socket who sent the data was ordely closed
 	or string received, IP and PORT received if UDP
 	PS.: this is a 'blocking function'
 */
@@ -540,6 +540,35 @@ static int socket_sleep()
 	return 0;
 }
 
+static int socket_getsockname()
+{
+/*
+	lua calling: like getsockname(int socket)
+	return ip and por of the given socket, or nil nil if fails.
+*/
+	struct sockaddr_in sin;
+	socklen_t len = sizeof(sin);
+	char *ip = NULL;
+	int port = 0;
+
+	if(!lua_isinteger(LCS, -1))
+	luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
+
+	if (getsockname(lua_tointeger(LCS, -1), (struct sockaddr *)&sin, &len) == -1)
+		perror("getsockname");
+	else{
+		ip = inet_ntoa(sin.sin_addr);
+		port = ntohs(sin.sin_port);
+	}
+
+	lua_pushstring(LCS, ip);
+	if(port == 0)
+		lua_pushnil(LCS);
+	else
+		lua_pushinteger(LCS, port);
+	return 2;
+}
+
 static int ls_is_bigendian()
 {
 /*
@@ -673,6 +702,8 @@ void ls_init()
 	lua_setfield(LCS, -2, "select");
 	lua_pushcfunction(LCS, socket_sleep);
 	lua_setfield(LCS, -2, "sleep");
+	lua_pushcfunction(LCS, socket_getsockname);
+	lua_setfield(LCS, -2, "getsockname");
 	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);

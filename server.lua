@@ -4,7 +4,6 @@ local QSpassword = io.read()
 print("stored")
 
 services = {} --all services my server can provide
-services.SERVER_IP = "127.0.0.1"
 
 --	PASSWORD FUNCTION	--
 function services.getPassword()
@@ -17,8 +16,8 @@ regS = {} --registrated Services
 regS[service] = {}
 regS[service].ip = the ip where the service shall be registrated on QS
 regS[service].port = the port where the service shall be registrated on QS
-regS[service].reged = false --if this service already was registered
 regS[service].proto = protocol to be used (usualy conf.proto)
+regS[service].reged = false --if this service already was registered
 regS[service].skey = the socket of this service
 regS[service].QS_IP = nil
 regS[service].QS_PORT = nil
@@ -33,8 +32,6 @@ regS[service].doPar(str) - call this functions to return the correct paremetres 
 
 --[[CHAT]]
 regS.chat = {}
-regS.chat.ip = services.SERVER_IP
-regS.chat.port = 2323
 regS.chat.proto = conf.proto
 regS.chat.reged = false
 function regS.chat.doPar(str)
@@ -72,8 +69,6 @@ end
 
 --[[POSITION]]
 regS.qpos = {}
-regS.qpos.ip = services.SERVER_IP
-regS.qpos.port = 10967
 regS.qpos.proto = conf.proto
 regS.qpos.reged = false
 function regS.qpos.doPar(str)

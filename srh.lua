@@ -134,13 +134,22 @@ local function opensockets()
 ]]
 	local boolret
 	local tret = {}
+	local ok
 
 	conf.print("warning the Queue Server about who is the correct server to send data...")
 	for rkey,rval in pairs(regS) do
 		if(rval.reged == true) then
 			--only open socreatecket to those services who are registrated in the queue server
 			conf.print("service: "..rkey.."...")
-			rval.skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.skey, rval.QS_IP, rval.QS_PORT, {proto = rval.proto, ip = rval.ip, port = rval.port})
+			rval.skey = gsh.create()
+			ok = gsh.set(rval.proto, rval.skey, nil, nil, true)
+			if(ok == false) then
+				error("Could not set socket of service: "..rkey)
+			end
+			gsh.connect(rval.skey, rval.QS_IP, rval.QS_PORT)
+			rval.ip, rval.port = gsh.getsockname(rval.skey)
+print(rval.ip, rval.port)
+			rval.skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.skey)
 			rval.skey, sret = srh.recv(rval.skey, false)
 			conf.print("\t"..sret)
 			table.insert(tret, rval.skey)
@@ -169,7 +178,7 @@ while(true) do
 	if(taux ~= nil) then
 		conf.print("accept request identified")
 		for key, value in pairs(taux) do
-			gsh.accept(taux.skey)
+			conf.print("\t", gsh.accept(value))
 			worked = true
 		end
 	end

@@ -101,9 +101,11 @@ function gsh.accept(key)
 	parameters:
 		key - the key to an valid already created socket
 	return:
-		true on success, false otherwise
+		on success: true and the ip and port of who hand connected, false nil nil otherwise
 ]]
 	local ok
+	local ip
+	local port
 
 	if(type(key) ~= "string") then
 		error("LUA: gsh.accept 1st argument spected to be string but it's " .. type(key))
@@ -113,14 +115,14 @@ function gsh.accept(key)
 		error("LUA: the socket needs to be set first")
 	else
 		ok = true
-		socks[key].csock = lsok.accept(socks[key].mysock)
+		socks[key].csock, ip, port = lsok.accept(socks[key].mysock)
 		if(socks[key].csock == -1) then
 			error("LUA: gsh.accept, could not accept connection")
 		end
 		socks[key].active = true
 	end
 
-	return ok
+	return ok, ip, port
 end
 
 function gsh.connect(key, ip, port)
@@ -559,3 +561,21 @@ function gsh.deactivate(key)
 
 	return ret
 end
+
+
+function gsh.getsockname(key)
+	local ip
+	local port
+
+ 	if(type(key) ~= "string") then
+		error("LUA: gsh.getsockname 1st argument spected to be string but it's " .. type(key))
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: gsh.getsockname the given socket does not exist")
+	elseif(socks[key].proto ~= lsok.proto.tcp) then
+		error("LUA: gsh.getsockname this fucntion works only int tcp sockets")
+	end
+
+	ip, port = lsok.getsockname(socks[key].mysock)
+
+	return ip, port
+ end
