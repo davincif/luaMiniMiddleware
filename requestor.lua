@@ -4,7 +4,7 @@ require "crh"
 
 request = {}
 request.clientIP = "127.0.0.1"
-request.clientPort = math.random(conf.minPort, conf.maxPort)
+request.clientPort = conf.randPort()
 
 local chat = {}
 chat.reged = false --if the client is registrated at chat queue at QS

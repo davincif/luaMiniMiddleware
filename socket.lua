@@ -579,3 +579,22 @@ function gsh.getsockname(key)
 
 	return ip, port
  end
+
+ function gsh.getclientsockname(key)
+	local ip
+	local port
+
+ 	if(type(key) ~= "string") then
+		error("LUA: gsh.getclientsockname 1st argument spected to be string but it's " .. type(key))
+	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
+		error("LUA: gsh.getclientsockname the given socket does not exist")
+	elseif(socks[key].proto ~= lsok.proto.tcp) then
+		error("LUA: gsh.getclientsockname this fucntion works only int tcp sockets")
+	end
+
+	if(socks[key].csock ~= nil and socks[key].csock ~= 0) then
+		ip, port = lsok.getsockname(socks[key].csock)
+	end
+
+	return ip, port
+ end

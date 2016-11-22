@@ -6,6 +6,7 @@
 
 conf = {}
 
+math.randomseed(os.time())
 
 --	DEFINITIONS	--
 conf.client = "client.lua"		--defines what file will be invoked when the client is called
@@ -72,4 +73,8 @@ function conf.print(...)
 	if(conf.output == true) then
 		print(...)
 	end
+end
+
+function conf.randPort()
+	return math.random(conf.minPort, conf.maxPort)
 end

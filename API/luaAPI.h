@@ -76,6 +76,7 @@ static int socket_send();
 static int socket_recv();
 static int socket_select();
 static int socket_sleep();
+static int socket_getsockname();
 static int ls_is_bigendian();
 static int ls_is_proto_valid();
 /*****************/

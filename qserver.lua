@@ -53,7 +53,7 @@ qregS[service].doPar(str) - call this functions to return the correct paremetres
 --[[CHAT]]
 qregS.chat = {}
 qregS.chat.ip = qservices.SERVER_IP
-qregS.chat.port = math.random(conf.minPort, conf.maxPort)
+qregS.chat.port = conf.randPort()
 qregS.chat.proto = conf.proto
 qregS.chat.reged = false
 function qregS.chat.doPar(str)
@@ -177,7 +177,7 @@ end
 --[[POSITION]]
 qregS.qpos = {} --queue position
 qregS.qpos.ip = qservices.SERVER_IP
-qregS.qpos.port = math.random(conf.minPort, conf.maxPort)
+qregS.qpos.port = conf.randPort()
 qregS.qpos.proto = conf.proto
 qregS.qpos.reged = false
 function qregS.qpos.doPar(str)
