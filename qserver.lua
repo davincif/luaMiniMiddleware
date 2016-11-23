@@ -29,6 +29,8 @@ function qservices.comparePass(password)
 	return password == QSpassword
 end
 
+--	
+
 --	SERVICES REGISTRATION	--
 qregS = {} --registrated Services
 --[[
@@ -37,7 +39,7 @@ qregS[service].ip = the ip where the service shall be registrated
 qregS[service].port = the port where the service shall be registrated
 qregS[service].reged = false --if this service already was registered
 qregS[service].proto = protocol to be used (usualy conf.proto)
-qregS[service].skey = the socket of this service
+qregS[service].socket = the socket of this service
 qregS[service].serverIP = nil --the ip of the server who is gonna process the this queue's information
 qregS[service].serverPORT = nil --the port of the server who is gonna process the this queue's information
 --the ip and port of the server that will process the information of this queue will be

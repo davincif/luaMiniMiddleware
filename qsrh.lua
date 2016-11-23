@@ -1,94 +1,11 @@
 --[[	QUEUE SERVER TO REQUEST HANDLER		]]
 require "qsinvoker"
-require "socket"
 
 qsrh = {}
 local STP = 100000 --STP (Sleep Time Pattern) --100000μs = 0,1s
 
-function qsrh.send(strmsg, key, ip, port, socktable)
---[[
-	parameters:
-		strmsg - string to be sent over the net.
-		key - the key to the socket to be used. Or nil if the sock was never created
-		ip - the ip where to send the msg. (it's only obligatory if key is nil or protocol is udp)
-		port - the port where to send the msg. (it's only obligatory if key is nil or protocol is udp)
-		socktable - a table with: (it's only obligatory if key is nil)
-			socktable.proto - the protocol to be used.
-			socktable.ip - the ip of this socket.
-			socktable.port - the port of this socket.
-
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-		a numer with the amount of bytes sent
-]]
-	local bytes
-
-	--do not check all the parameters because the functions in socket.lua already do it
-
-	if(key == nil and type(socktable) ~= "table") then
-		error("LUA: 1st argument of qsrh.send spected to be table but it's " .. type(socktable))
-	elseif(key == nil and type(socktable.proto) ~= "number") then
-		error("LUA: in 1st argument of qsrh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
-	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.ip) ~= "string") then
-		error("LUA: in 1st argument of qsrh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
-	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.port) ~= "number") then
-		error("LUA: in 1st argument of qsrh.send, socktable.port spected to be number but it's " .. type(socktable.port))
-	else
-		if(key == nil) then
-			key = gsh.create()
-			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
-		elseif(gsh.isSetted(key) == false) then
-			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
-		end
-
-		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-			gsh.connect(key, ip, port)
-		end
-
-		bytes = gsh.send(strmsg, key, false, ip, port)
-		if(bytes <= 0) then
-			print("LUA: bytes not sent")
-		end
-	end
-
-	return key, bytes
-end
-
-function qsrh.recv(key, flag, proto, ip, port)
---[[
-	parameters:
-		key - the key to he socket to be used. Or nil if the sock was never created
-		flag - pas true to delete this socket after use if the service wont the socket anymore.
-		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
-		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
-		port - the port of this socket. (if key isn't nil, forget about this parameter)
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-		on success the returned string, an empty string otherwise.
-]]
-	local sret
-	local bytes
-
-	--do not check all the parameters because the functions in socket.lua already do it
-
-	if(key == nil) then
-		key = gsh.create()
-		gsh.set(proto, key, ip, port)
-	elseif(gsh.isSetted(key) == false) then
-		gsh.set(proto, key, ip, port)
-	end
-	
-	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-		gsh.accept(key)
-	end
-
-	sret = gsh.recv(key, flag)
-
-	return key, sret
-end
-
 -- CHECK AND REGISTER SERVICES --
-local function checkNregister()
+function qsrh.checkNregister()
 --[[
 	Functionality:
 		call this funtion to check if all the services in this server are registrated.
@@ -98,17 +15,24 @@ local function checkNregister()
 ]]
 	local dnsSock
 	local bytes
-	local ret
+	local sret
 	local ok = true
+
+	--openning and setting up the socket
+	dnsSock = lsok.open(lsok.proto.udp)
+	if(dnsSock == 0) then
+		error("LUA: Could not open socket")
+	end
+
 
 	print("services registration...")
 	for key,value in pairs(qregS) do
 		print("\tADD("..key..","..value.ip..","..value.port..")")
-		dnsSock, bytes = qsrh.send("ADD("..key..","..value.ip..","..value.port..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		dnsSock, ret = qsrh.recv(dnsSock, false)
-		print("\t\t"..ret)
+		bytes = lsok.send(dnsSock, "ADD("..key..","..value.ip..","..value.port..")", conf.dnsIP, conf.dnsPort)
+		sret = lsok.recv(dnsSock, lsok.proto.udp)
+		print("\t\t"..sret)
 
-		if(ret == conf.ok) then
+		if(sret == conf.ok) then
 			value.reged = true
 		else
 			ok = false
@@ -118,12 +42,14 @@ local function checkNregister()
 	end
 	print("all services registrated")
 
-	gsh.close(dnsSock)
+	if(lsok.close(dnsSock) == false) then
+		print("LUA: Could not close socket used to connect with the DNS")
+	end
 
 	return ok
 end
 
-local function opensockets()
+function qsrh.opensockets()
 --[[
 	parameters:
 		just open the socket of all services in the server
@@ -137,11 +63,17 @@ local function opensockets()
 		if(rval.reged == true) then
 			--only open socket to those services who are registrated in the queue server
 			if(rval.skey == nil) then
-				rval.skey = gsh.create()
-				boolret = gsh.set(rval.proto, rval.skey, rval.ip, rval.port)
+				rval.skey = lsok.open(lsok.proto.tcp)
+				if(rval.skey == 0) then
+					error("LUA: Could not open socket")
+				end
+				boolret = lsok.bind(rval.skey, rval.ip, rval.port)
 				if(boolret == false) then
-					print("could not set socktable of queue service \""..rkey.."\"")
-					os.exit()
+					error("could not bind socktable of queue service \""..rkey.."\"")
+				end
+				boolret = lsok.listen(rval.skey)
+				if(boolret == false) then
+					error("could not listen socktable of queue service \""..rkey.."\"")
 				end
 			end
 			table.insert(tret, rval.skey)
@@ -151,7 +83,7 @@ local function opensockets()
 	return tret
 end
 
-local function QS_update()
+function qsrh.QS_update()
 --[[
 	parameters:
 		none
@@ -173,9 +105,9 @@ local function QS_update()
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].s_update == true) then
 					--update the client in qsckey
 					conf.print("\tupdating \""..qsckey.."\" queue client on the server")
-print("update("..")", qregS[serv].skey, gsh.getsockname(qregS[serv].skey))
-					qregS[serv].skey, bytes = qsrh.send("update("..")", qregS[serv].skey)
-					qregS[serv].skey, answere = qsrh.recv(qregS[serv].skey, false)
+	print("update("..")", qregS[serv].skey, gsh.getsockname(qregS[serv].skey))
+					bytes = lsok.send(qregS[serv].skey, "update("..")")
+					answere = lsok.recv(qregS[serv].skey, lsok.proto.tcp)
 					conf.print("\t"..answere)
 				end
 			end
@@ -205,53 +137,35 @@ local taux
 
 
 --request registration on the DNS
-checkNregister()
-keyt = opensockets()
+qsrh.checkNregister()
+keyt = qsrh.opensockets()
 
 while(true) do
+	local cs --connected socket
 	worked = false
 
 	--receive the request from a new conection
-	taux = gsh.is_acceptable(keyt)
+	taux = lsok.select(#keyt, keyt)
 	if(taux ~= nil) then
 		conf.print("accept request identified in")
 		for key, value in pairs(taux) do
-			conf.print("\t", gsh.accept(value))
-			worked = true
+			cs = lsok.accept(value)
 		end
-		opensockets()
+		--call invoker and return it's answere
+		scmd = lsok.recv(cs, lsok.proto.tcp)
+		if(scmd ~= nil) then
+			scmd = qsinvok.invoker(scmd)
+			conf.print("server will answer: "..scmd)
+			bytes = lsok.send(cs, "ADD("..key..","..value.ip..","..value.port..")")
+		end
+		if(lsok.close(cs) == false) then
+			print("Could not close socket")
+			--do some error handling stuff
+		end
+		worked = true
 	end
 
-	--receive a new msg from a already connected socket (in tcp case)
-	taux = gsh.is_readable(keyt)
-	if(taux ~= nil) then
-		conf.print("identified msg waiting")
-		for key, value in pairs(taux) do
-			local ignore
-			ignore, scmd = qsrh.recv(value, false, conf.proto, taux.ip, taux.port)
-			--[[ BUG NOTE
-				Note that when the QS receives a msg, it'll do so by the csock socket within skey "value"
-				it's a ruge problem once whe whant to keep a long data exchange, 'cause each new client
-				will rewrite the socket of the last one. A way to around this is manteining a table of client,
-				but mechanisms gotta be craeted to deal with it.
-				For now, my guess is the the software will still work with this bug, but in a constate state of failure ^^"
-			]]
-			--call invoker and return it's answere
-			if(scmd ~= nil) then
-				scmd = qsinvok.invoker(scmd)
-				conf.print("server will answer: "..scmd)
-				ignore, bytes = qsrh.send(scmd, value)
-				worked = true
-			end
-			-- if client wants to end connection
-			if(scmd == conf.close) then
-				gsh.deactivate(ignore) --deactive for revoke only
-			end
-			worked = true
-		end
-	end
-
-	QS_update()
+	qsrh.QS_update()
 
 	if(worked == false) then
 		lsok.sleep(STP)
