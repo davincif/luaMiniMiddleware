@@ -1,95 +1,11 @@
 --[[	SERVER TO REQUEST HANDLER	]]
 require "invoker"
-require "socket"
 
 srh = {}
 local STP = 100000 --STP (Sleep Time Pattern) --100000μs = 0,1s
 
-function srh.send(strmsg, key, ip, port, socktable)
---[[
-	parameters:
-		strmsg - string to be sent over the net.
-		key - the key to the socket to be used. Or nil if the sock was never created
-		ip - the ip where to send the msg. (it's only obligatory if key is nil or protocol is udp)
-		port - the port where to send the msg. (it's only obligatory if key is nil or protocol is udp)
-		socktable - a table with: (it's only obligatory if key is nil)
-			socktable.proto - the protocol to be used.
-			socktable.ip - the ip of this socket.
-			socktable.port - the port of this socket.
-
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-		a numer with the amount of bytes sent
-]]
-	local bytes
-
-	--do not check all the parameters because the functions in socket.lua already do it
-
-	if(key == nil and type(socktable) ~= "table") then
-		error("LUA: 1st argument of srh.send spected to be table but it's " .. type(socktable))
-	elseif(key == nil and type(socktable.proto) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.proto spected to be number but it's " .. type(socktable.proto))
-	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.ip) ~= "string") then
-		error("LUA: in 1st argument of srh.send, socktable.ip spected to be string but it's " .. type(socktable.ip))
-	elseif(key == nil and socktable.proto == lsok.proto.tcp and type(socktable.port) ~= "number") then
-		error("LUA: in 1st argument of srh.send, socktable.port spected to be number but it's " .. type(socktable.port))
-	else
-		if(key == nil) then
-			key = gsh.create()
-			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
-		elseif(gsh.isSetted(key) == false) then
-			gsh.set(socktable.proto, key, socktable.ip, socktable.port, true)
-		end
-
-		if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-			gsh.connect(key, ip, port)
-		end
-
-		bytes = gsh.send(strmsg, key, false, ip, port)
-		if(bytes <= 0) then
-			print("LUA: bytes not sent")
-		end
-	end
-
-	return key, bytes
-end
-
-function srh.recv(key, flag, proto, ip, port)
---[[
-	parameters:
-		key - the key to the socket to be used. Or nil if the sock was never created
-		flag - pas true to delete this socket after use if the service wont use the socket anymore.
-		proto - the protocol to be used. (if key isn't nil, forget about this parameter)
-		ip - the ip of this socket. (if key isn't nil, forget about this parameter)
-		port - the port of this socket. (if key isn't nil, forget about this parameter)
-	return:
-		on success a key (string) that uniquely identify who is asking this send, an empty string otherwise.
-		on success the returned string, an empty string otherwise.
-]]
-	local sret
-	local bytes
-
-	--do not check all the parameters because the functions in socket.lua already do it
-	--sret = lsok.recv(socktable.sock, lsok.proto.tcp)
-
-	if(key == nil) then
-		key = gsh.create()
-		gsh.set(proto, key, ip, port)
-	elseif(gsh.isSetted(key) == false) then
-		gsh.set(proto, key, ip, port)
-	end
-	
-	if(gsh.isActive(key) == false and gsh.getProto(key) == lsok.proto.tcp) then
-		gsh.accept(key)
-	end
-
-	sret = gsh.recv(key, flag)
-
-	return key, sret
-end
-
+function srh.findS()
 -- FIND SERVICE --
-local function findS()
 --[[
 	parameters:
 		none
@@ -97,15 +13,20 @@ local function findS()
 		none
 	PS.: this function's duty is to find the Services address of the QS in the DNS and store it.
 ]]
-	local skey
+	local sock
 	local si, sf
 	local sret --string returned
 	local bytes
 
-	conf.print("searching services on Queue Server...")
+	sock = lsok.open(lsok.proto.udp)
+	if(sock == 0) then
+		error("LUA: Could not open socket")
+	end
+
+	conf.print("searching QS services on DNS...")
 	for rkey,rval in pairs(regS) do
-		skey, bytes = srh.send("SEARCH("..rkey..")", skey, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-		skey, sret = srh.recv(skey, false)
+		bytes = lsok.send(sock, "ADD("..key..","..rval.ip..","..rval.port..")", conf.dnsIP, conf.dnsPort)
+		sret = lsok.recv(sock, lsok.proto.udp)
 		if(sret == conf.notFound) then
 			conf.print("DNS returned error: "..sret)
 			conf.print("service \"" ..rkey.."\" not registrated at the DNS")
@@ -121,11 +42,10 @@ local function findS()
 		end
 	end
 
-	gsh.close(skey)
-	skey = nil
+	lsok.close(sock)
 end
 
-local function opensockets()
+function srh.opensockets()
 --[[
 	parameters:
 		just open the socket of all services in the server
@@ -141,7 +61,11 @@ local function opensockets()
 		if(rval.reged == true) then
 			--only open socreatecket to those services who are registrated in the queue server
 			conf.print("service: "..rkey.."...")
-			rval.skey = gsh.create()
+			rval.socket = lsok.open(lsok.proto.tcp)
+			if(rval.socket == 0) then
+				error("LUA: Could not open socket")
+			end
+			--[[	 	PAREI AQUI			]]
 			ok = gsh.set(rval.proto, rval.skey, nil, nil, true)
 			if(ok == false) then
 				error("Could not set socket of service: "..rkey)
@@ -167,8 +91,8 @@ local worked
 local keyt
 local taux
 
-findS()
-keyt = opensockets()
+srh.findS()
+keyt = srh.opensockets()
 
 while(true) do
 	worked = false

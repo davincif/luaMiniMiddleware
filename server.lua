@@ -18,7 +18,7 @@ regS[service].ip = the ip where the service shall be registrated on QS
 regS[service].port = the port where the service shall be registrated on QS
 regS[service].proto = protocol to be used (usualy conf.proto)
 regS[service].reged = false --if this service already was registered
-regS[service].skey = the socket of this service
+regS[service].socket = the socket of this service
 regS[service].QS_IP = nil
 regS[service].QS_PORT = nil
 --the ip and port of the server that will process the information of this queue will be
