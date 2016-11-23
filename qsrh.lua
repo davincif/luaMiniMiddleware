@@ -173,7 +173,7 @@ local function QS_update()
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].s_update == true) then
 					--update the client in qsckey
 					conf.print("\tupdating \""..qsckey.."\" queue client on the server")
-print("update("..")", qregS[serv].skey, gsh.getclientsockname(qregS[serv].skey))
+print("update("..")", qregS[serv].skey, gsh.getsockname(qregS[serv].skey))
 					qregS[serv].skey, bytes = qsrh.send("update("..")", qregS[serv].skey)
 					qregS[serv].skey, answere = qsrh.recv(qregS[serv].skey, false)
 					conf.print("\t"..answere)

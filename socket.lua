@@ -571,11 +571,13 @@ function gsh.getsockname(key)
 		error("LUA: gsh.getsockname 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
 		error("LUA: gsh.getsockname the given socket does not exist")
-	elseif(socks[key].proto ~= lsok.proto.tcp) then
-		error("LUA: gsh.getsockname this fucntion works only int tcp sockets")
 	end
 
-	ip, port = lsok.getsockname(socks[key].mysock)
+	if(socks[key].proto ~= lsok.proto.tcp) then
+		print("LUA: gsh.getsockname this fucntion works only in tcp sockets")
+	else
+		ip, port = lsok.getsockname(socks[key].mysock)
+	end
 
 	return ip, port
  end
@@ -588,12 +590,14 @@ function gsh.getsockname(key)
 		error("LUA: gsh.getclientsockname 1st argument spected to be string but it's " .. type(key))
 	elseif(socks[key] == nil or type(socks[key]) ~= "table") then
 		error("LUA: gsh.getclientsockname the given socket does not exist")
-	elseif(socks[key].proto ~= lsok.proto.tcp) then
-		error("LUA: gsh.getclientsockname this fucntion works only int tcp sockets")
 	end
 
-	if(socks[key].csock ~= nil and socks[key].csock ~= 0) then
-		ip, port = lsok.getsockname(socks[key].csock)
+	if(socks[key].proto ~= lsok.proto.tcp) then
+		print("LUA: gsh.getclientsockname this fucntion works only in tcp sockets")
+	else
+		if(socks[key].csock ~= nil and socks[key].csock ~= 0) then
+			ip, port = lsok.getsockname(socks[key].csock)
+		end
 	end
 
 	return ip, port
