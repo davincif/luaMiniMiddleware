@@ -83,6 +83,9 @@ function qsrh.opensockets()
 	return tret
 end
 
+function qsrh.closeServes()
+end
+
 function qsrh.QS_update()
 --[[
 	parameters:
@@ -134,6 +137,7 @@ local scmd
 local worked
 local keyt
 local taux
+local cs --connected socket
 
 
 --request registration on the DNS
@@ -141,7 +145,6 @@ qsrh.checkNregister()
 keyt = qsrh.opensockets()
 
 while(true) do
-	local cs --connected socket
 	worked = false
 
 	--receive the request from a new conection
@@ -155,8 +158,8 @@ while(true) do
 		scmd = lsok.recv(cs, lsok.proto.tcp)
 		if(scmd ~= nil) then
 			scmd = qsinvok.invoker(scmd)
-			conf.print("server will answer: "..scmd)
-			bytes = lsok.send(cs, "ADD("..key..","..value.ip..","..value.port..")")
+			conf.print("Qserver will answer: "..scmd)
+			bytes = lsok.send(cs, scmd)
 		end
 		if(lsok.close(cs) == false) then
 			print("Could not close socket")
@@ -172,4 +175,4 @@ while(true) do
 	end
 end
 
-gsh.closeAll()
+qsrh.closeServes()

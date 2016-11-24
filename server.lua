@@ -4,6 +4,7 @@ local QSpassword = io.read()
 print("stored")
 
 services = {} --all services my server can provide
+services.SERVER_IP = "127.0.0.1"
 
 --	PASSWORD FUNCTION	--
 function services.getPassword()
@@ -32,6 +33,8 @@ regS[service].doPar(str) - call this functions to return the correct paremetres 
 
 --[[CHAT]]
 regS.chat = {}
+regS.chat.ip = services.SERVER_IP
+regS.chat.port = conf.randPort()
 regS.chat.proto = conf.proto
 regS.chat.reged = false
 function regS.chat.doPar(str)
@@ -69,6 +72,8 @@ end
 
 --[[POSITION]]
 regS.qpos = {}
+regS.qpos.ip = services.SERVER_IP
+regS.qpos.port = conf.randPort()
 regS.qpos.proto = conf.proto
 regS.qpos.reged = false
 function regS.qpos.doPar(str)

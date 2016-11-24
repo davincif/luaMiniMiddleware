@@ -25,7 +25,7 @@ function srh.findS()
 
 	conf.print("searching QS services on DNS...")
 	for rkey,rval in pairs(regS) do
-		bytes = lsok.send(sock, "ADD("..key..","..rval.ip..","..rval.port..")", conf.dnsIP, conf.dnsPort)
+		bytes = lsok.send(sock, "SEARCH("..rkey..")", conf.dnsIP, conf.dnsPort)
 		sret = lsok.recv(sock, lsok.proto.udp)
 		if(sret == conf.notFound) then
 			conf.print("DNS returned error: "..sret)
@@ -52,9 +52,11 @@ function srh.opensockets()
 	return:
 		a table with all keys
 ]]
-	local boolret
 	local tret = {}
+	local boolret
 	local ok
+	local bytes
+	local answere
 
 	conf.print("warning the Queue Server about who is the correct server to send data...")
 	for rkey,rval in pairs(regS) do
@@ -65,23 +67,25 @@ function srh.opensockets()
 			if(rval.socket == 0) then
 				error("LUA: Could not open socket")
 			end
-			--[[	 	PAREI AQUI			]]
-			ok = gsh.set(rval.proto, rval.skey, nil, nil, true)
+			ok = lsok.bind(rval.socket ,rval.ip, rval.port)
 			if(ok == false) then
-				error("Could not set socket of service: "..rkey)
+				error("could not bind socktable of queue service \""..rkey.."\"")
 			end
-			gsh.connect(rval.skey, rval.QS_IP, rval.QS_PORT)
-			rval.ip, rval.port = gsh.getsockname(rval.skey)
-print(rval.ip, rval.port)
-			rval.skey, bytes = srh.send(rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.skey)
-			rval.skey, sret = srh.recv(rval.skey, false)
-			conf.print("\t"..sret)
-			table.insert(tret, rval.skey)
+			if(lsok.connect(rval.socket, rval.QS_IP, rval.QS_PORT) == false) then
+				error("Could not connect socket")
+			end
+			bytes = lsok.send(rval.socket, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
+			answere = lsok.recv(rval.socket, lsok.proto.tcp)
+			conf.print("\t"..answere)
+			table.insert(tret, rval.socket)
 		end
 	end
 	conf.print("done")
 
 	return tret
+end
+
+function srh.closeServes()
 end
 
 --[[	RUNNING SERVER	]]
@@ -90,6 +94,7 @@ local scmd
 local worked
 local keyt
 local taux
+local cs --connected socket
 
 srh.findS()
 keyt = srh.opensockets()
@@ -98,34 +103,36 @@ while(true) do
 	worked = false
 
 	--receive the request from a new conection
-	taux = gsh.is_acceptable(keyt)
+	taux = lsok.select(#keyt, keyt)
+for key, value in pairs(taux) do
+print(">>", key, value)
+end
 	if(taux ~= nil) then
 		conf.print("accept request identified")
 		for key, value in pairs(taux) do
-			conf.print("\t", gsh.accept(value))
-			worked = true
+			cs = lsok.accept(value)
+			if(cs <= 0) then
+				break
+			end
 		end
-	end
-
-	--receive a new msg from a already connected socket (in tcp case)
-	taux = gsh.is_readable(keyt)
-	if(taux ~= nil) then
-		conf.print("identified msg waiting")
-		for key, value in pairs(taux) do
-			taux.skey, scmd = srh.recv(taux.skey, false, conf.proto, taux.ip, taux.port)
-			--call invoker and return it's answere
-			scmd = invok.invoker(scmd)
+		--call invoker and return it's answere
+		scmd = lsok.recv(cs, lsok.proto.tcp)
+		if(scmd ~= nil) then
+			scmd = qsinvok.invoker(scmd)
 			conf.print("server will answer: "..scmd)
-			taux.skey, bytes = srh.send(scmd, taux.skey)
-			
-			gsh.deactivate(taux.skey)
-			worked = true
+			bytes = lsok.send(cs, scmd)
 		end
+		if(lsok.close(cs) == false) then
+			print("Could not close socket")
+			--do some error handling stuff
+		end
+		worked = true
 	end
 
 	if(worked == false) then
 		lsok.sleep(STP)
 	end
+	break
 end
 
-gsh.closeAll()
+srh.closeServes()
