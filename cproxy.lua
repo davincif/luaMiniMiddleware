@@ -42,7 +42,16 @@ function cproxy.chat.listen()
 	if(str == nil) then
 		str, flag = request.chat.listen()
 	else
-		flag = true
+		local si
+		local sf
+		local clientn
+
+		conf.print("server already answere to chat.listen queue: "..str)
+		si = string.find(str, "%(")
+		sf = string.find(str, ",")
+		clientn = string.sub(str, si+1, sf-1)
+		si = string.find(str, ")")
+		str = string.sub(str, sf+1, si-1)
 	end
 
 	return str, flag

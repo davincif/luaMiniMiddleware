@@ -22,7 +22,7 @@ function request.chat.pop()
 		str = table.remove(chat.pool, 1)
 	end
 
-	return srt
+	return str
 end
 
 function request.chat.talk(str, proto)

@@ -6,13 +6,11 @@ local said
 local flag
 
 while(say ~= "exit()") do
-	io.write("you: ")
+	io.write("\nyou: ")
 	say = io.read()
 	cproxy.chat.talk(say)
 	repeat
 		said, flag = cproxy.chat.listen()
-		print(said)
+		print("chat: "..said, flag)
 	until(flag ~= true)
 end
-
---print(cproxy.chat("Go Go!!"))
