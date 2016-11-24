@@ -11,7 +11,7 @@ static int socket_open()
 
 	if(!lua_isinteger(LCS, -1))
 	{
-		luaL_error(LCS, "1st argument of function 'socket_open' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_open' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 		sock = 0;
 	}else{
 		switch(lua_tointeger(LCS, -1))
@@ -45,7 +45,7 @@ static int socket_close()
 	LS_Bool ret;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_close' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_close' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	if(close(lua_tointeger(LCS, -1)) == -1)
 	{
@@ -69,9 +69,9 @@ static int socket_shutdown()
 	enum LS_SHUT_MODE shutmode;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_shutdown' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	shutmode = lua_tointeger(LCS, -1);
 
@@ -98,6 +98,7 @@ static int socket_connect()
 {
 /*
 	lua calling: like socket_connect(int socket, char *ipaddr, int port)
+	OBS.: this is a 'blocking function'
 */
 	const char *ip;
 	int port, sock;
@@ -105,11 +106,11 @@ static int socket_connect()
 	LS_Bool ret = LS_True;
 	
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_connect' must be integer\n");
+		luaL_error(LCS, "3st argument of function 'socket_connect' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_connect' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_connect' must be string, but it's %s\n", luaL_typename(LCS, -2));
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3st argument of function 'socket_connect' must be integer\n");
+		luaL_error(LCS, "1rd argument of function 'socket_connect' must be integer, but it's %s\n", luaL_typename(LCS, -3));
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -141,7 +142,7 @@ static int socket_listen()
 	int sock;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_listen' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	sock = lua_tointeger(LCS, -1);
 
 	if(listen(sock, 1) == 0)
@@ -169,11 +170,11 @@ static int socket_bind()
 	LS_Bool ret;
 	
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 	else if(!lua_isstring(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_bind' must be string\n");
+		luaL_error(LCS, "2nd argument of function 'socket_bind' must be string, but it's %s\n", luaL_typename(LCS, -2));
 	else if(!lua_isinteger(LCS, -3))
-		luaL_error(LCS, "3st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "3rd argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -3));
 
 	port = lua_tointeger(LCS, -1);
 	if(port < 0 || port > MAX_PORT_SIZE)
@@ -203,24 +204,30 @@ static int socket_accept()
 {
 /*
 	lua calling: like socket_accept(int socket)
+	returns a new socket, it's ip and port
 	PS.: this is a blocking function
 */
 	socklen_t addr_size;
-	struct sockaddr_storage serverStorage;
-	int newSocket;
+	struct sockaddr_in serverStorage;
+	int newSocket, port;
+	char *ip;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	addr_size = sizeof(serverStorage);
 	//this is a blockinf function
 	newSocket = accept(lua_tointeger(LCS, -1), (struct sockaddr *) &serverStorage, &addr_size);
+	ip = inet_ntoa(serverStorage.sin_addr);
+	port = ntohs(serverStorage.sin_port);
 
 	if(newSocket == -1)
 		printf("\tError accepting: %s\n", strerror(errno));
 
 	lua_pushinteger(LCS, newSocket);
-	return 1;
+	lua_pushstring(LCS, ip);
+	lua_pushinteger(LCS, port);
+	return 3;
 }
 
 static int socket_send()
@@ -229,6 +236,7 @@ static int socket_send()
 	lua calling: like
 		socket_send(int socket, char *message) if TPC
 		or socket_send(int socket, char *message, char *ip, int port) if UPD
+		return the amount of bytes send, if 0 means that the socket who recved the data was ordely closed
 */
 	char *saux, *msg, *ip, msg_size[MAX_MSG_SIZE+1];
 	int bytesent, sock, msglen, port, proto;
@@ -238,9 +246,9 @@ static int socket_send()
 	{
 		case 2: //TCP
 			if(!lua_isinteger(LCS, -2))
-				luaL_error(LCS, "2st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 			else if(!lua_isstring(LCS, -1))
-				luaL_error(LCS, "1st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "1st argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -1));
 
 			//getting arguments
 			sock = lua_tointeger(LCS, -2);
@@ -253,13 +261,13 @@ static int socket_send()
 
 		case 4: //UDP
 			if(!lua_isinteger(LCS, -4))
-				luaL_error(LCS, "4st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "4th argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -4));
 			else if(!lua_isstring(LCS, -3))
-				luaL_error(LCS, "3st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "3rd argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -3));
 			else if(!lua_isstring(LCS, -2))
-				luaL_error(LCS, "2st argument of function 'socket_send' must be string\n");
+				luaL_error(LCS, "2nd argument of function 'socket_send' must be string, but it's %s\n", luaL_typename(LCS, -2));
 			else if(!lua_isinteger(LCS, -1))
-				luaL_error(LCS, "1st argument of function 'socket_send' must be integer\n");
+				luaL_error(LCS, "1st argument of function 'socket_send' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 			//getting arguments
 			sock = lua_tointeger(LCS, -4);
@@ -304,7 +312,7 @@ static int socket_send()
 		break;
 	
 		case 0:
-			printf("Error! No bytes sent: %s\n", strerror(errno));
+			printf("Error! No bytes sent of msg size: %s\n", strerror(errno));
 		break;
 		
 		default:
@@ -337,10 +345,10 @@ static int socket_send()
 static int socket_recv()
 {
 /*
-	lua calling: like socket_accept(int socket, int protocol)
-	returns the string received if TCP
+	lua calling: like socket_recv(int socket, int protocol)
+	returns the string received if TCP, or nil if the socket receiv 0 bytes, what means that the socket who sent the data was ordely closed
 	or string received, IP and PORT received if UDP
-	OBS.: this is a blocking function
+	PS.: this is a 'blocking function'
 */
 	int byterecv, sock, msglen, proto, port, ret = 1;
 	char *msg = NULL, msg_size[MAX_MSG_SIZE+1], *ip;
@@ -348,9 +356,9 @@ static int socket_recv()
 	socklen_t socklen;
 
 	if(!lua_isinteger(LCS, -2))
-		luaL_error(LCS, "2st argument of function 'socket_recv' must be integer\n");
+		luaL_error(LCS, "2nd argument of function 'socket_recv' must be integer, but it's %s\n", luaL_typename(LCS, -2));
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'socket_recv' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	sock = lua_tointeger(LCS, -2);
 	proto = lua_tointeger(LCS, -1);
@@ -372,7 +380,7 @@ static int socket_recv()
 		default:
 			luaL_error(LCS, "Required protocol not recognized\n");
 	}
-	ls_unmarshall(msg_size);
+
 	//chekcing if send worked fine
 	switch(byterecv)
 	{
@@ -381,10 +389,11 @@ static int socket_recv()
 		break;
 
 		case 0:
-			printf("Error! No bytes recv: %s\n", strerror(errno));
+			printf("Error! No bytes recv of msg size: %s\n", strerror(errno));
 		break;
 
 		default:
+			ls_unmarshall(msg_size);
 			msglen = atoi(msg_size);
 			msg = (char*) malloc(sizeof(char)*(msglen+1));
 			msg[msglen] = '\0';
@@ -429,6 +438,137 @@ static int socket_recv()
 	return ret;
 }
 
+static int socket_select()
+{
+/*
+	lua calling: like socket_select(table_size, table {[1] = socket1, [2] = socket2, ...})
+	returns a table with the socks who are receiving data like {[1] = socket2, [2] = socket4};
+	nil if none of them are select to be read;
+	or a integer if any error has ocurred
+*/
+	int *myfds, myfds_len, maxfd, j, result;
+	fd_set readset;
+	LS_Bool newTable = LS_False;
+	struct timeval tv;
+
+	if(!lua_istable(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_select' must be table, but it's %s\n", luaL_typename(LCS, -1));
+
+	lua_len(LCS, -1);
+	myfds_len = lua_tointeger(LCS, -1);
+	lua_pop(LCS, 1);
+	myfds = (int) malloc(sizeof(int)*myfds_len);
+	if(myfds == NULL)
+		luaL_error(LCS, "function 'socket_select' was incapable of allocate memory");
+
+	/* table is in the stack at index 't' */
+	lua_pushnil(LCS);  /* first key */
+	for(j = 0; lua_next(LCS, -2) != 0; j++)
+	{
+		//uses 'key' (at index -2) and 'value' (at index -1) */
+		myfds[j] = lua_tointeger(LCS, -1);
+		if(myfds[j] == 0)
+			luaL_error(LCS, "socket received in 'socket_select' is not valid");
+
+		//do select()
+
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(LCS, 1);
+	}
+
+	//Initialize the set
+	FD_ZERO(&readset);
+	maxfd = 0;
+	for(j = 0; j < myfds_len; j++) {
+		FD_SET(myfds[j], &readset);
+		maxfd = (maxfd > myfds[j]) ? maxfd : myfds[j];
+	}
+
+	//Now, check for readability
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	result = select(maxfd+1, &readset, NULL, NULL, &tv);
+	if (result == -1) {
+		//Some error...
+		printf("select in function 'socket_select': %s\n", strerror(errno));
+		lua_pushinteger(LCS, errno);
+		newTable = LS_True;
+	}else{
+		result = 1; //reusing variable as a counter
+		for (j = 0; j < myfds_len; j++)
+		{
+			if (FD_ISSET(myfds[j], &readset))
+			{
+				//myfds[j] is readable
+				if(newTable == LS_False)
+				{
+					lua_newtable(LCS);
+					newTable = LS_True;
+				}
+
+				lua_pushinteger(LCS, myfds[j]);
+				lua_rawseti(LCS, -2, result);
+				result++;
+			}
+		}
+	}
+
+	if(myfds != NULL)
+		free(myfds);
+
+	if(newTable == LS_False)
+		lua_pushnil(LCS);
+	return 1;
+}
+
+static int socket_sleep()
+{
+/*
+	lua calling: like socket_sleep(micro_seconds)
+*/
+	struct timeval tv;
+
+	if(!lua_isinteger(LCS, -1))
+		luaL_error(LCS, "1st argument of function 'socket_sleep' must be number, but it's %s\n", luaL_typename(LCS, -1));
+
+	tv.tv_usec = lua_tointeger(LCS, -1);
+	tv.tv_sec = tv.tv_usec/1000000;
+	tv.tv_usec = tv.tv_usec%1000000;
+	if(select(0, NULL, NULL, NULL, &tv) == -1)
+		printf("select in function 'socket_sleep': %s\n", strerror(errno));
+
+	return 0;
+}
+
+static int socket_getsockname()
+{
+/*
+	lua calling: like getsockname(int socket)
+	return ip and por of the given socket, or nil nil if fails.
+*/
+	struct sockaddr_in sin;
+	socklen_t len = sizeof(sin);
+	char *ip = NULL;
+	int port = 0;
+
+	if(!lua_isinteger(LCS, -1))
+	luaL_error(LCS, "1st argument of function 'socket_bind' must be integer, but it's %s\n", luaL_typename(LCS, -1));
+
+	if (getsockname(lua_tointeger(LCS, -1), (struct sockaddr *)&sin, &len) == -1)
+		perror("getsockname");
+	else{
+		ip = inet_ntoa(sin.sin_addr);
+		port = ntohs(sin.sin_port);
+	}
+
+	lua_pushstring(LCS, ip);
+	if(port == 0)
+		lua_pushnil(LCS);
+	else
+		lua_pushinteger(LCS, port);
+	return 2;
+}
+
 static int ls_is_bigendian()
 {
 /*
@@ -450,7 +590,7 @@ static int ls_is_proto_valid()
 	enum LS_PROTO_TYPE proto;
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'ls_is_proto_valid' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'ls_is_proto_valid' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	proto = lua_tointeger(LCS, -1);
 
@@ -469,7 +609,7 @@ static int ls_is_socket_open()
 	char buff[] = "test";
 
 	if(!lua_isinteger(LCS, -1))
-		luaL_error(LCS, "1st argument of function 'ls_is_socket_open' must be integer\n");
+		luaL_error(LCS, "1st argument of function 'ls_is_socket_open' must be integer, but it's %s\n", luaL_typename(LCS, -1));
 
 	proto = lua_tointeger(LCS, -1);
 
@@ -558,6 +698,12 @@ void ls_init()
 	lua_setfield(LCS, -2, "send");
 	lua_pushcfunction(LCS, socket_recv);
 	lua_setfield(LCS, -2, "recv");
+	lua_pushcfunction(LCS, socket_select);
+	lua_setfield(LCS, -2, "select");
+	lua_pushcfunction(LCS, socket_sleep);
+	lua_setfield(LCS, -2, "sleep");
+	lua_pushcfunction(LCS, socket_getsockname);
+	lua_setfield(LCS, -2, "getsockname");
 	lua_pushcfunction(LCS, ls_is_bigendian);
 	lua_setfield(LCS, -2, "is_bigendian");
 	lua_pushcfunction(LCS, ls_is_proto_valid);

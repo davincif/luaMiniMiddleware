@@ -4,6 +4,9 @@ lua-5.3.3/
 application
 clientApp
 serverApp
+queueServerApp
 dnsApp
 *sublime-project
-sublime_project/
+API/lua/lua
+API/lua/luac
+API/lua/liblua.a

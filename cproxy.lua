@@ -3,24 +3,52 @@ require "requestor"
 
 cproxy = {}
 cproxy.proto = lsok.proto.tcp -- preferencial protocol to be used, TCP by pattern.
+cproxy.chat = {}
 
-function cproxy.echo(str)
+function cproxy.chat.talk(str)
 --[[
 	parameters:
-		str - string that you want to see the echo
+		str - string to be sent to the chat
 	return:
-		on success the returned string (str), an empty string otherwise.
+		on success the returned conf.ok, an empty string otherwise.
 ]]
 	local sret
 	local msg
 
 	if(type(str) ~= "string") then
-		error("cproxy.echo argument spected to be string but it's " .. type(str))
+		error("cproxy.chat argument spected to be string but it's " .. type(str))
 	else
 		msg = {}
-		msg.service = "ECHO"
+		msg.service = "CHAT"
 		msg.load = str
-		sret = request.echo(msg)
+		sret = request.chat.talk(msg)
+	end
+
+	return sret
+end
+
+function cproxy.chat.listen()
+
+	return request.chat.listen()
+end
+
+function cproxy.qpos(str)
+--[[
+	parameters:
+		str - string to be sent to the chat
+	return:
+		on success the returned conf.ok, an empty string otherwise.
+]]
+	local sret
+	local msg
+
+	if(type(str) ~= "string") then
+		error("cproxy.qpos argument spected to be string but it's " .. type(str))
+	else
+		msg = {}
+		msg.service = "QPOS"
+		msg.load = str
+		sret = request.chat(msg)
 	end
 
 	return sret

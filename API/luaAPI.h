@@ -4,13 +4,19 @@
 /*CLIBRARIES*/
 #include <stdio.h>
 #include <errno.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <math.h>
 /************/
+
+
+/*UNIXLIBRARIES*/
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+/***************/
 
 /*EXTERNAL LIBRARIES*/
 #include "lua/lua.h"
@@ -68,6 +74,9 @@ static int socket_bind();
 static int socket_accept();
 static int socket_send();
 static int socket_recv();
+static int socket_select();
+static int socket_sleep();
+static int socket_getsockname();
 static int ls_is_bigendian();
 static int ls_is_proto_valid();
 /*****************/
