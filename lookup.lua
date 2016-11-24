@@ -29,7 +29,7 @@ function lookup.search(service)
 
 			bytes = lsok.send(socket, "SEARCH("..service..")", conf.dnsIP, conf.dnsPort)
 			sret = lsok.recv(socket, lsok.proto.udp)
-print("retornou do dns: ", sret)
+			conf.print("dns returned: ", sret)
 			if(sret == conf.notFound) then
 				print("service \"" ..service.."\" not registrated at the DNS")
 				ip = sret

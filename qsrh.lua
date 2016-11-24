@@ -122,9 +122,14 @@ function qsrh.QS_update()
 				--in this service, what are the client that needs update on client?
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].c_update == true) then
 					--update the client in qsckey
-					conf.print(serv..":\tupdating \""..qsckey.."\" queue client on the server")
+					conf.print(serv..":\tbroadcasting \""..qsckey.."\" msg for clients")
+					for kk,vv in pairs(qservices[serv].queue) do
+						--broadcasting for all users
+						if(type(vv) == "table") then
+							bytes = lsok.send(value.socket, "("..qsckey..","..qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[kk].ip, qservices[serv].queue[kk].port)
+						end
+					end
 					conf.print("\t"..answere)
-					bytes = lsok.send(value.socket, "("..qsckey..",".. qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[qsckey].ip, qservices[serv].queue[qsckey].port)
 					qservices[serv].queue[qsckey].c_update = false
 				end
 			end

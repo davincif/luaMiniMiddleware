@@ -52,7 +52,7 @@ function request.chat.talk(strm, proto)
 					end
 				end
 			else
-				print("client " .. chat.cname .. "registed.")
+				print("client " .. chat.cname .. " registed.")
 				print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
 				bytes = lsok.send(chat.socket, strm.service.."(update,"..chat.cname..","..strm.load..")", ip, port)
 
@@ -71,16 +71,32 @@ function request.chat.listen(proto)
 	local clientn
 	local resp
 	local sret
+	local moreToRead
+	local taux
 	
-	conf.print("wating response...")
-	sret = lsok.recv(chat.socket, lsok.proto.udp)
-	si = string.find(sret, "%(")
-	sf = string.find(sret, ",")
-	clientn = string.sub(sret, si+1, sf-1)
-	si = string.find(sret, ")")
-	resp = string.sub(sret, sf+1, si-1)
+	lsok.sleep(1000000)
+	taux = lsok.select(1, {[1] = chat.socket})
+	if(taux ~= nil) then
+		conf.print("wating response...")
+		sret = lsok.recv(chat.socket, lsok.proto.udp)
+print("ESTOU RECEBENDO ISSO: " .. sret)
+		si = string.find(sret, "%(")
+		sf = string.find(sret, ",")
+		clientn = string.sub(sret, si+1, sf-1)
+		si = string.find(sret, ")")
+		resp = string.sub(sret, sf+1, si-1)
 
-	return resp
+		taux = lsok.select(1, {[1] = chat.socket})
+		if(taux ~= nil) then
+			moreToRead = true
+		else
+			moreToRead = false
+		end
+	else
+		moreToRead = false
+	end
+
+	return resp, moreToRead
 end
 
 function request.revoke(queueName, ip, port, proto)
