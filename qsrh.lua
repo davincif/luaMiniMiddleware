@@ -120,6 +120,7 @@ function qsrh.QS_update()
 					--update the client in qsckey
 					conf.print("updating \""..qsckey.."\" queue client on the server")
 					conf.print("\t"..answere)
+					bytes = lsok.send(value.socket, "("..qsckey..",".. qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[qsckey].ip, qservices[serv].queue[qsckey].port)
 				end
 			end
 		end
@@ -151,7 +152,7 @@ while(true) do
 			--call invoker and return it's answere
 			scmd, ip, port = lsok.recv(value, lsok.proto.udp)
 			if(scmd ~= nil) then
-				scmd, rq = qsinvok.invoker(scmd)
+				scmd, rq = qsinvok.invoker(scmd, ip, port)
 				conf.print("Qserver will answer: "..scmd)
 				bytes = lsok.send(value, scmd, ip, port)
 			end

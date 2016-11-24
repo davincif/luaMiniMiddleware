@@ -26,6 +26,50 @@ function cproxy.chat(str)
 	return sret
 end
 
+function cproxy.wChat(str)
+--[[
+	parameters:
+		str - string to be sent to the chat
+	return:
+		on success the returned conf.ok, an empty string otherwise.
+]]
+	local sret
+	local msg
+
+	if(type(str) ~= "string") then
+		error("cproxy.chat argument spected to be string but it's " .. type(str))
+	else
+		msg = {}
+		msg.service = "CHAT"
+		msg.load = str
+		sret = request.chat(msg)
+	end
+
+	return sret
+end
+
+function cproxy.qpos(str)
+--[[
+	parameters:
+		str - string to be sent to the chat
+	return:
+		on success the returned conf.ok, an empty string otherwise.
+]]
+	local sret
+	local msg
+
+	if(type(str) ~= "string") then
+		error("cproxy.qpos argument spected to be string but it's " .. type(str))
+	else
+		msg = {}
+		msg.service = "QPOS"
+		msg.load = str
+		sret = request.chat(msg)
+	end
+
+	return sret
+end
+
 function cproxy.set_preferencial_proto(proto)
 --[[
 	parameters:
