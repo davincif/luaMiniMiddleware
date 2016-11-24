@@ -9,6 +9,7 @@ local chat = {}
 chat.reged = false --if the client is registrated at chat queue at QS
 chat.cname = "" --the name of this client at the chat queue
 chat.socket = 0 --socket
+
 function request.chat(strm, proto)
 --[[
 	parameters:
@@ -59,6 +60,18 @@ function request.chat(strm, proto)
 					conf.print("server answere: "..sret)
 				end
 			end
+
+			--waiting update
+print("wating response...")
+			local clientn
+			local resp
+			sret = lsok.recv(chat.socket, lsok.proto.udp)
+			si = string.find(sret, "%(")
+			sf = string.find(sret, ",")
+			clientn = string.sub(sret, si+1, sf-1)
+			si = string.find(sret, ")")
+			resp = string.sub(sret, sf+1, si-1)
+			print(clientn .. ": "..resp)
 		end
 	end
 

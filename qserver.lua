@@ -20,6 +20,8 @@ qservices[service].queue.c_update = false --set true to update information to th
 qservices[service].queue.quantity = 0 --the quantity of clients
 qservices[service].queue[client] = {} --a new table to store each client information
 qservices[service].queue[client].___ --any data needed to the service
+qservices[service].queue[client].ip --client's ip
+qservices[service].queue[client].port --client's port
 qservices[service].queue[client].s_update = false --set true to update information of this specific client to server as soon as possible
 qservices[service].queue[client].c_update = false --set true only if this information already was processed by the server and is ready to be set to the client
 ]]
@@ -78,7 +80,7 @@ qservices.chat.queue = {}
 qservices.chat.queue.quantity = 0
 qservices.chat.queue.s_update = false
 qservices.chat.queue.c_update = false
-function qservices.chat.sign(cname, password)
+function qservices.chat.sign(cname, ip, port)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
@@ -100,6 +102,8 @@ function qservices.chat.sign(cname, password)
 		qservices.chat.queue[cname] = {}
 		qservices.chat.queue[cname].s_update = false
 		qservices.chat.queue[cname].c_update = false
+		qservices.chat.queue[cname].ip = ip
+		qservices.chat.queue[cname].port = port
 		boolret = true
 		conf.print("QS: client \""..cname.."\" got in the queue")
 	else

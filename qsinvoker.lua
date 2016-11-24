@@ -9,7 +9,7 @@ math.randomseed(tp)
 
 local lf = {} --local functions
 
-function qsinvok.invoker(command)
+function qsinvok.invoker(command, ip, port)
 --[[
 	parameters:
 		command - the command that the client sent to the server
@@ -20,6 +20,7 @@ function qsinvok.invoker(command)
 	local rs --rs = resquested service
 	local rq --rq = resquested queue
 	local load
+	local cname = nil
 
 	conf.print("command: "..command)
 	--coomand exemple: "chat(update,cja823,'ei vey bora logo!')"
@@ -73,12 +74,13 @@ function qsinvok.invoker(command)
 						answere = conf.ok
 					end
 				else
-					answere = qservices[rq].sign(load)
+					answere = qservices[rq].sign(load, ip, port)
 					if(answere == true) then
 						answere = load
 					else
 						answere = conf.signE
 					end
+					
 				end
 			end
 		elseif(rs == "revoke") then
@@ -122,7 +124,7 @@ function qsinvok.invoker(command)
 		end
 	end
 
-	return answere, rq
+	return answere, rq, cname
 end
 
 --[[LOCAL FUNCTIONS]]
