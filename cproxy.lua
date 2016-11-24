@@ -52,6 +52,7 @@ function cproxy.chat.listen()
 		clientn = string.sub(str, si+1, sf-1)
 		si = string.find(str, ")")
 		str = string.sub(str, sf+1, si-1)
+		flag = true
 	end
 
 	return str, flag

@@ -25,7 +25,7 @@ while(true) do
 
 	--receive the request from a new conection
 	scmd, recvIP, recvPORT = lsok.recv(sockgate, lsok.proto.udp)
-	conf.print("command recreived: "..scmd)
+	print("command recreived: "..scmd)
 
 	--process the request
 	si = string.find(scmd, "%(")

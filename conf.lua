@@ -27,7 +27,7 @@ conf.CQNV = 2					--CQNV (Client Queue Name Variance)
 conf.signE = "already signed"	--sign error (occuer when the same client try to sign to the same queue more than once)
 conf.maxPort = math.pow(2,16)-1	--the maximal number to open a port
 conf.minPort = 1023+1-1			--the minimal number to open a port
-conf.output = false				--says if the programs will output mensagens (like a debug)
+conf.output = true				--says if the programs will output mensagens (like a debug)
 conf.close = "closed connec."	--the msg received when the connection is closed 
 
 
