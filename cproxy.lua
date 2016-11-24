@@ -3,8 +3,8 @@ require "requestor"
 
 cproxy = {}
 cproxy.proto = lsok.proto.tcp -- preferencial protocol to be used, TCP by pattern.
-cproxy.chat = {}
 
+cproxy.chat = {}
 function cproxy.chat.talk(str)
 --[[
 	parameters:
@@ -13,45 +13,49 @@ function cproxy.chat.talk(str)
 		on success the returned conf.ok, an empty string otherwise.
 ]]
 	local sret
-	local msg
+	local flag
 
 	if(type(str) ~= "string") then
 		error("cproxy.chat argument spected to be string but it's " .. type(str))
 	else
-		msg = {}
-		msg.service = "CHAT"
-		msg.load = str
-		sret = request.chat.talk(msg)
+		sret = request.chat.talk(str)
+		repeat
+			if(sret == conf.notFound) then
+				print(sret)
+			elseif(sret == conf.signE) then
+				print(sret)
+			elseif(sret ~= conf.ok) then
+				request.chat.push(sret)
+				sret, flag = request.chat.listen(nil, true)
+			end
+		until(sret == conf.ok or sret == conf.notFound or sret == conf.signE)
 	end
 
 	return sret
 end
 
 function cproxy.chat.listen()
+	local str
+	local flag
 
-	return request.chat.listen()
+	str = request.chat.pop()
+	if(str == nil) then
+		str, flag = request.chat.listen()
+	else
+		flag = true
+	end
+
+	return str, flag
 end
 
-function cproxy.qpos(str)
+cproxy.qpos = {}
+function cproxy.qpos.talk(str)
 --[[
 	parameters:
 		str - string to be sent to the chat
 	return:
 		on success the returned conf.ok, an empty string otherwise.
 ]]
-	local sret
-	local msg
-
-	if(type(str) ~= "string") then
-		error("cproxy.qpos argument spected to be string but it's " .. type(str))
-	else
-		msg = {}
-		msg.service = "QPOS"
-		msg.load = str
-		sret = request.chat(msg)
-	end
-
-	return sret
 end
 
 function cproxy.set_preferencial_proto(proto)

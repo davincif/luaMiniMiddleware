@@ -126,7 +126,7 @@ function qsrh.QS_update()
 					for kk,vv in pairs(qservices[serv].queue) do
 						--broadcasting for all users
 						if(type(vv) == "table") then
-							bytes = lsok.send(value.socket, "("..qsckey..","..qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[kk].ip, qservices[serv].queue[kk].port)
+							bytes = lsok.send(value.socket, serv.."("..qsckey..","..qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[kk].ip, qservices[serv].queue[kk].port)
 						end
 					end
 					conf.print("\t"..answere)

@@ -9,12 +9,26 @@ local chat = {}
 chat.reged = false --if the client is registrated at chat queue at QS
 chat.cname = "" --the name of this client at the chat queue
 chat.socket = 0 --socket
+chat.pool = {} --store already answered msg by the QS but not processed by the client yet. works like FIFO "First In First Out"
 
 request.chat = {}
-function request.chat.talk(strm, proto)
+function request.chat.push(str)
+	table.insert(chat.pool, str)
+end
+function request.chat.pop()
+	local str
+
+	if(#chat.pool > 0) then
+		str = table.remove(chat.pool, 1)
+	end
+
+	return srt
+end
+
+function request.chat.talk(str, proto)
 --[[
 	parameters:
-		strm - table passed by the proxy, with 2 fields: "service" with a service offered by the server; and "load" with the msg to be sent.
+		str - the msg to be sent.
 		proto - what's the procotol that the msg will be sent. If nil, use the protocol preference in conf.lua.
 	return:
 		return the return of the recv, or string "" in fail
@@ -24,41 +38,41 @@ function request.chat.talk(strm, proto)
 	local port
 	local bytes
 
-	if(type(strm) ~= "table") then
-		error("request.chat 1st argument spected to be table but it's " .. type(strm))
+	if(type(str) ~= "string") then
+		error("request.chat.talk 1st argument spected to be string but it's " .. type(str))
 	elseif(proto ~= nil and lsok.is_proto_valid(proto) == false) then
-		error("request.chat 2nd argument, proto, not recognized")
+		error("request.chat.talk 2nd argument, proto, not recognized")
 	else
 		ip, port = lookup.search("chat")
 		conf.print("serviço chat está em: "..ip.."   "..port)
 		if(ip == conf.notFound) then
 			sret = ""
-			print("LUA: request.chat: 'chat' service not found at the server")
+			print("LUA: request.chat.talk: 'chat' service not found at the server")
 		else
 			if(proto == nil) then
 				proto = conf.proto
 			end
 			if(chat.reged == false) then
-				if(request.sign("chat", ip, port, proto) == false) then
+				if(request.chat.sign("chat", ip, port, proto) == false) then
 					sret = ""
-					print("LUA: request.chat: sign to 'chat' service not found at the server")
+					print("LUA: request.chat.talk: chat.sign to 'chat' service not found at the server")
 				else
-					print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
-					bytes = lsok.send(chat.socket, strm.service.."(update,"..chat.cname..","..strm.load..")", ip, port)
+					print("sending msg: " .."chat(update,"..chat.cname..","..str..")")
+					bytes = lsok.send(chat.socket, "chat(update,"..chat.cname..","..str..")", ip, port)
 
 					if(chat.socket > 0) then
 						sret = lsok.recv(chat.socket, lsok.proto.udp)
-						conf.print("server answere: "..sret)
+						conf.print("server answere to chat.talk: "..sret)
 					end
 				end
 			else
 				print("client " .. chat.cname .. " registed.")
-				print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
-				bytes = lsok.send(chat.socket, strm.service.."(update,"..chat.cname..","..strm.load..")", ip, port)
+				print("sending msg: " .. "chat".."(update,"..chat.cname..","..str..")")
+				bytes = lsok.send(chat.socket, "chat".."(update,"..chat.cname..","..str..")", ip, port)
 
 				if(chat.socket > 0) then
 					sret = lsok.recv(chat.socket, lsok.proto.udp)
-					conf.print("server answere: "..sret)
+					conf.print("server answere to chat.talk: "..sret)
 				end
 			end
 		end
@@ -67,31 +81,36 @@ function request.chat.talk(strm, proto)
 	return sret
 end
 
-function request.chat.listen(proto)
+function request.chat.listen(proto, noWait)
 	local clientn
 	local resp
 	local sret
 	local moreToRead
 	local taux
-	
-	lsok.sleep(1000000)
-	taux = lsok.select(1, {[1] = chat.socket})
-	if(taux ~= nil) then
-		conf.print("wating response...")
-		sret = lsok.recv(chat.socket, lsok.proto.udp)
-print("ESTOU RECEBENDO ISSO: " .. sret)
+
+	if(proto ~= nil and lsok.is_proto_valid(proto) == false) then
+		error("request.chat.listen argument, proto, not recognized")
+	end
+
+	if(noWait ~= true) then
+		lsok.sleep(1000000)
+	end
+	conf.print("wating response...")
+	sret = lsok.recv(chat.socket, lsok.proto.udp)
+	if(sret ~= conf.ok) then
+		conf.print("server answere to chat.listen: "..sret)
 		si = string.find(sret, "%(")
 		sf = string.find(sret, ",")
 		clientn = string.sub(sret, si+1, sf-1)
 		si = string.find(sret, ")")
 		resp = string.sub(sret, sf+1, si-1)
+	else
+		resp = conf.ok
+	end
 
-		taux = lsok.select(1, {[1] = chat.socket})
-		if(taux ~= nil) then
-			moreToRead = true
-		else
-			moreToRead = false
-		end
+	taux = lsok.select(1, {[1] = chat.socket})
+	if(taux ~= nil) then
+		moreToRead = true
 	else
 		moreToRead = false
 	end
@@ -99,7 +118,7 @@ print("ESTOU RECEBENDO ISSO: " .. sret)
 	return resp, moreToRead
 end
 
-function request.revoke(queueName, ip, port, proto)
+function request.chat.revoke(queueName, ip, port, proto)
 --[[
 	parameters:
 		queueName - name of the service to reques sign
@@ -133,7 +152,7 @@ function request.revoke(queueName, ip, port, proto)
 end
 
 
-function request.sign(queueName, ip, port, proto)
+function request.chat.sign(queueName, ip, port, proto)
 --[[
 	ATTENTION: do not use this function unless you really know what you're doing
 	parameters:
