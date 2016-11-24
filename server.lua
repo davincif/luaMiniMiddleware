@@ -47,7 +47,23 @@ function regS.chat.doPar(str)
 ]]
 	return str
 end
-function services.chat(cname, str)
+services.chat = {}
+services.chat.dellist = {}
+services.chat.dellist.quantity = 0
+services.chat.queue = {}
+services.chat.queue.quantity = 0
+services.chat.queue.s_update = false
+services.chat.queue.c_update = false
+function services.chat.revoke(cname)
+-- SERVICE IMPLEMENTATIONS --
+--[[
+	parameters:
+		cname - the name of the client who want to sign on this queue
+	return:
+		return true on success, false otherwise (that only occurs if the client already isn't signed)
+]]
+end
+function services.chat.update(cname, str)
 -- SERVICE IMPLEMENTATIONS --
 --[[
 	parameters:
@@ -62,7 +78,6 @@ function services.chat(cname, str)
 		print("SERVER: CHAT's argument spected to be string but it's " .. type(strmsg))
 		sret = false
 	else
-		print("SERVER: chat invoked for "..str) --testline
 		sret = ">"..str
 	end
 

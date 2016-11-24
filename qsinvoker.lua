@@ -24,7 +24,7 @@ function qsinvok.invoker(command)
 	conf.print("command: "..command)
 	--coomand exemple: "chat(update,cja823,'ei vey bora logo!')"
 	if(type(command) ~= "string") then
-		error("LUA: 1st argument of qsinvok.invoker spected to be string but it's " .. type(command))
+		error("1st argument of qsinvok.invoker spected to be string but it's " .. type(command))
 	else
 		local si, sf
 		si = string.find(command, "%(")
@@ -107,18 +107,18 @@ function qsinvok.invoker(command)
 			si = string.find(load, ",")
 			cname = string.sub(load, 1, si-1)
 			str = string.sub(load, si+1)
-			sf = qservices[rq].update(cname, str) --reusing the variable
+			sf = qservices[rq].update(cname, qregS[rq].doPar(str)) --reusing the variable
 			if(sf == true) then
 				answere = conf.ok
 			elseif(sf == false) then
 				answere = conf.notFound
 			else
 				answere = conf.signE
-				print("entrei no ultimo erro aqui")
+				print("Error when updating: "..answere)
 			end
 		else
 			answere = nil
-			print("LUA: the requested service do not exist!")
+			print("the requested service do not exist!")
 		end
 	end
 

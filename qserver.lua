@@ -68,6 +68,9 @@ function qregS.chat.doPar(str)
 ]]
 	return str
 end
+function qregS.chat.doLoad(cname)
+	return qservices.chat.queue[cname].str
+end
 qservices.chat = {}
 qservices.chat.dellist = {}
 qservices.chat.dellist.quantity = 0
@@ -204,6 +207,9 @@ function qregS.qpos.doPar(str)
 
 	print("qregS.qpos.doPar: "..command.."("..cname..", "..x..", "..y..")")
 	return command, cname, x, y
+end
+function qregS.qpos.doLoad(cname)
+	return qservices.qpos.queue[cname].x..","..qservices.qpos.queue[cname].y
 end
 qservices.qpos = {}
 qservices.qpos.dellist = {}

@@ -21,7 +21,7 @@ function qsrh.checkNregister()
 	--openning and setting up the socket
 	dnsSock = lsok.open(lsok.proto.udp)
 	if(dnsSock == 0) then
-		error("LUA: Could not open socket")
+		error("Could not open socket")
 	end
 
 
@@ -36,14 +36,14 @@ function qsrh.checkNregister()
 			value.reged = true
 		else
 			ok = false
-			print("LUA: in checkNregister, could not register \""..key.."\" service")
+			print("in checkNregister, could not register \""..key.."\" service")
 			break
 		end
 	end
 	print("all services registrated")
 
 	if(lsok.close(dnsSock) == false) then
-		print("LUA: Could not close socket used to connect with the DNS")
+		print("Could not close socket used to connect with the DNS")
 	end
 
 	return ok
@@ -65,7 +65,7 @@ function qsrh.opensockets()
 			if(rval.socket == nil) then
 				rval.socket = lsok.open(lsok.proto.udp)
 				if(rval.socket == 0) then
-					error("LUA: Could not open socket")
+					error("Could not open socket")
 				end
 				boolret = lsok.bind(rval.socket, rval.ip, rval.port)
 				if(boolret == false) then
@@ -98,28 +98,32 @@ function qsrh.QS_update()
 
 		if(qservices[serv].queue.s_update == true) then
 			--this service needs updated on server
-			conf.print("updating \""..serv.."\" queue on the server")
 			for qsckey,qscvalue in pairs(qservices[serv].queue) do
 				--in this service, what are the client that needs update on server?
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].s_update == true) then
 					--update the client in qsckey
-					conf.print("\tupdating \""..qsckey.."\" queue client on the server")
-					bytes = lsok.send(value.socket, "update("..")", value.serverIP, value.serverPORT)
+					conf.print(serv..":\tupdating \""..qsckey.."\" queue client on the server")
+					bytes = lsok.send(value.socket, serv.."(update,"..qsckey..","..qregS[serv].doLoad(qsckey)..")", value.serverIP, value.serverPORT)
 					answere = lsok.recv(value.socket, lsok.proto.udp)
 					conf.print("\t"..answere)
+					qservices[serv].queue[qsckey].s_update = false
+					qservices[serv].update(qsckey, answere)
+					qservices[serv].queue[qsckey].s_update = false --yes, this line do it needed!
+					qservices[serv].queue[qsckey].c_update = true
+					qservices[serv].queue.c_update = true
 				end
 			end
+			qservices[serv].queue.s_update = false
 		end
 
 		if(qservices[serv].queue.c_update == true) then
 			--does this service needs to be updated on the client?
-			conf.print("\""..serv.."\" queue need to be updated on the client")
 			for qsckey,qscvalue in pairs(qservices[serv].queue) do
 				--in this service, what are the client that needs update on client?
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].c_update == true) then
 					--update the client in qsckey
-					conf.print("updating \""..qsckey.."\" queue client on the server")
-					conf.print("\t"..answere)
+					conf.print(serv..":\tupdating \""..qsckey.."\" queue client on the server")
+					conf.print("\t".."answere")
 				end
 			end
 		end
