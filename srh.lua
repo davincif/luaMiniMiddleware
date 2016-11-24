@@ -23,15 +23,15 @@ function srh.findS()
 		error("LUA: Could not open socket")
 	end
 
-	conf.print("searching QS services on DNS...")
+	print("searching QS services on DNS...")
 	for rkey,rval in pairs(regS) do
 		bytes = lsok.send(sock, "SEARCH("..rkey..")", conf.dnsIP, conf.dnsPort)
 		sret = lsok.recv(sock, lsok.proto.udp)
 		if(sret == conf.notFound) then
-			conf.print("DNS returned error: "..sret)
-			conf.print("service \"" ..rkey.."\" not registrated at the DNS")
+			print("DNS returned error: "..sret)
+			print("service \"" ..rkey.."\" not registrated at the DNS")
 		else
-			conf.print("service \"" ..rkey.."\" on server: "..sret) --testline
+			print("service \"" ..rkey.."\" on server: "..sret) --testline
 
 			si = string.find(sret, "%(")
 			sf = string.find(sret, ",")
@@ -58,11 +58,11 @@ function srh.opensockets()
 	local bytes
 	local answere
 
-	conf.print("warning the Queue Server about who is the correct server to send data...")
+	print("warning the Queue Server about who is the correct server to send data...")
 	for rkey,rval in pairs(regS) do
 		if(rval.reged == true) then
 			--only open socreatecket to those services who are registrated in the queue server
-			conf.print("service: "..rkey.."...")
+			print("service: "..rkey.."...")
 			rval.socket = lsok.open(lsok.proto.udp)
 			if(rval.socket == 0) then
 				error("LUA: Could not open socket")
@@ -73,11 +73,11 @@ function srh.opensockets()
 			end
 			bytes = lsok.send(rval.socket, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.QS_IP, rval.QS_PORT)
 			answere = lsok.recv(rval.socket, lsok.proto.udp)
-			conf.print("\t"..answere)
+			print("\t"..answere)
 			table.insert(tret, rval.socket)
 		end
 	end
-	conf.print("done")
+	print("done")
 
 	return tret
 end

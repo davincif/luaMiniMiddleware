@@ -168,14 +168,14 @@ function qservices.chat.update(cname, str)
 			qservices.chat.queue.s_update = true
 			qservices.chat.queue[cname].str = str
 			qservices.chat.queue[cname].s_update = true
-			print("QS: client \""..cname.."\" updated chat with msg:  " .. str)
+			conf.print("QS: client \""..cname.."\" updated chat with msg:  " .. str)
 			boolret = true
 		else
-			print("QS: the previous msg of " .. cname .. " still wasn't processed.")
+			conf.print("QS: the previous msg of " .. cname .. " still wasn't processed.")
 			boolret = false --troquei aqui de nil pra false
 		end
 	else
-		print("QS: client" .. cname .. " not registered.")
+		conf.print("QS: client" .. cname .. " not registered.")
 		boolret = nil -- troquei aqui de false pra nill 
 	end
 

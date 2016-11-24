@@ -11,6 +11,6 @@ while(say ~= "exit()") do
 	cproxy.chat.talk(say)
 	repeat
 		said, flag = cproxy.chat.listen()
-		print("chat: "..said, flag)
+		print("chat: "..said)
 	until(flag ~= true)
 end
