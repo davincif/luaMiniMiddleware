@@ -10,7 +10,8 @@ chat.reged = false --if the client is registrated at chat queue at QS
 chat.cname = "" --the name of this client at the chat queue
 chat.socket = 0 --socket
 
-function request.chat(strm, proto)
+request.chat = {}
+function request.chat.talk(strm, proto)
 --[[
 	parameters:
 		strm - table passed by the proxy, with 2 fields: "service" with a service offered by the server; and "load" with the msg to be sent.
@@ -60,22 +61,26 @@ function request.chat(strm, proto)
 					conf.print("server answere: "..sret)
 				end
 			end
-
-			--waiting update
-print("wating response...")
-			local clientn
-			local resp
-			sret = lsok.recv(chat.socket, lsok.proto.udp)
-			si = string.find(sret, "%(")
-			sf = string.find(sret, ",")
-			clientn = string.sub(sret, si+1, sf-1)
-			si = string.find(sret, ")")
-			resp = string.sub(sret, sf+1, si-1)
-			print(clientn .. ": "..resp)
 		end
 	end
 
 	return sret
+end
+
+function request.chat.listen(proto)
+	local clientn
+	local resp
+	local sret
+	
+	conf.print("wating response...")
+	sret = lsok.recv(chat.socket, lsok.proto.udp)
+	si = string.find(sret, "%(")
+	sf = string.find(sret, ",")
+	clientn = string.sub(sret, si+1, sf-1)
+	si = string.find(sret, ")")
+	resp = string.sub(sret, sf+1, si-1)
+
+	return resp
 end
 
 function request.revoke(queueName, ip, port, proto)

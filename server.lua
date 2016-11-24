@@ -78,7 +78,7 @@ function services.chat.update(cname, str)
 		print("SERVER: CHAT's argument spected to be string but it's " .. type(strmsg))
 		sret = false
 	else
-		sret = ">"..str
+		sret = cname.." > "..str
 	end
 
 	return sret

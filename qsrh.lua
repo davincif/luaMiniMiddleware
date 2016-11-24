@@ -125,8 +125,10 @@ function qsrh.QS_update()
 					conf.print(serv..":\tupdating \""..qsckey.."\" queue client on the server")
 					conf.print("\t"..answere)
 					bytes = lsok.send(value.socket, "("..qsckey..",".. qregS[serv].doLoad(qsckey)..")", qservices[serv].queue[qsckey].ip, qservices[serv].queue[qsckey].port)
+					qservices[serv].queue[qsckey].c_update = false
 				end
 			end
+			qservices[serv].queue.c_update = false
 		end
 	end
 end

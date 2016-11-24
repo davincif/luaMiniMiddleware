@@ -17,12 +17,12 @@ function lookup.search(service)
 	if(type(service) ~= "string") then
 		error("LUA: lookup.search 1st argument spected to be string but it's " .. type(service))
 	else
-		socket = lsok.open(lsok.proto.udp)
 		if(serv[service] == nil) then
 			local si, sf
 			local sret --string returned
 			local bytes
 			
+			socket = lsok.open(lsok.proto.udp)
 			serv[service] = {}
 			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
 			serv[service][1] = {}
@@ -41,7 +41,10 @@ print("retornou do dns: ", sret)
 				ip = string.sub(sret, si+1, sf-1)
 				si = string.find(sret, ")")
 				port = tonumber(string.sub(sret, sf+1, si-1))
+				serv[service][1].ip = ip
+				serv[service][1].port = port
 			end
+			lsok.close(socket)
 		else
 			local aux
 
@@ -52,10 +55,10 @@ print("retornou do dns: ", sret)
 			end
 			ip = serv[service][aux].ip
 			port = serv[service][aux].port
+
 		end
 	end
 
-	lsok.close(socket)
 
 	return ip, port
 end
