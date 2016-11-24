@@ -1,24 +1,22 @@
 --[[	REQUESTOR	]]
 require "lookup"
-require "crh"
 
 request = {}
-request.clientIP = "127.0.0.1"
-request.clientPort = conf.randPort()
+--[[request.clientIP = "127.0.0.1"
+request.clientPort = conf.randPort()]]
 
 local chat = {}
 chat.reged = false --if the client is registrated at chat queue at QS
 chat.cname = "" --the name of this client at the chat queue
-chat.skey = nil --socket key
+chat.socket = 0 --socket
 function request.chat(strm, proto)
 --[[
 	parameters:
 		strm - table passed by the proxy, with 2 fields: "service" with a service offered by the server; and "load" with the msg to be sent.
 		proto - what's the procotol that the msg will be sent. If nil, use the protocol preference in conf.lua.
 	return:
-		return the return of the crh.recv, or string "" in fail
+		return the return of the recv, or string "" in fail
 ]]
-	--strm = string msg
 	local sret
 	local ip
 	local port
@@ -38,35 +36,32 @@ function request.chat(strm, proto)
 			if(proto == nil) then
 				proto = conf.proto
 			end
-conf.print("sending from: "..request.clientIP.."   "..request.clientPort)
---conf.print("to: "..ip.."   "..port)
 			if(chat.reged == false) then
 				if(request.sign("chat", ip, port, proto) == false) then
 					sret = ""
 					print("LUA: request.chat: sign to 'chat' service not found at the server")
 				else
 					print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
-					chat.skey, bytes = crh.send(strm.service.."(update,"..chat.cname..","..strm.load..")", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
+					bytes = lsok.send(chat.socket, strm.service.."(update,"..chat.cname..","..strm.load..")", ip, port)
 
-					if(chat.skey ~= "" and chat.skey ~= nil) then
-						chat.skey, sret = crh.recv(chat.skey, false)
+					if(chat.socket > 0) then
+						sret = lsok.recv(chat.socket, lsok.proto.udp)
 						conf.print("server answere: "..sret)
 					end
 				end
 			else
 				print("client " .. chat.cname .. "registed.")
 				print("sending msg: " .. strm.service.."(update,"..chat.cname..","..strm.load..")")
-				chat.skey, bytes = crh.send(strm.service.."(update,"..chat.cname..","..strm.load..")", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
+				bytes = lsok.send(chat.socket, strm.service.."(update,"..chat.cname..","..strm.load..")", ip, port)
 
-				if(chat.skey ~= "" and chat.skey ~= nil) then
-					chat.skey, sret = crh.recv(chat.skey, false)
+				if(chat.socket > 0) then
+					sret = lsok.recv(chat.socket, lsok.proto.udp)
 					conf.print("server answere: "..sret)
 				end
-
 			end
 		end
 	end
-	gsh.deactivate(chat.skey)
+
 	return sret
 end
 
@@ -86,9 +81,8 @@ function request.revoke(queueName, ip, port, proto)
 	if(chat.cname == "") then
 		conf.print("no client to revome in \""..queueName.."\" queue")
 	else
-		chat.skey, bytes = crh.send(queueName.."(revoke,"..chat.cname..")", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
-
-		chat.skey, chat.cname = crh.recv(chat.skey, false)
+		bytes = lsok.send(chat.socket, queueName.."(revoke,"..chat.cname..")", ip, port)
+		chat.cname = lsok.recv(chat.socket, lsok.proto.udp)
 		if(chat.cname == conf.signE) then
 			--error
 			conf.print("could not sign on chat queue"..conf.cname)
@@ -98,7 +92,7 @@ function request.revoke(queueName, ip, port, proto)
 			chat.reged = true
 		end
 
-		gsh.deactivate(chat.skey)
+		gsh.deactivate(chat.socket)
 	end
 
 	return boolret
@@ -120,11 +114,12 @@ function request.sign(queueName, ip, port, proto)
 	local bytes
 	local sret
 
-	--conf.print("Requesting sing: "..queueName.."(sign)".."to:"..ip..","..port)
-	chat.skey, bytes = crh.send(queueName.."(sign)", chat.skey, ip, port, {proto = proto, ip = request.clientIP, port = request.clientPort})
+	chat.socket = lsok.open(lsok.proto.udp)
+	conf.print("Requesting sing: "..queueName.."(sign)".."to:"..ip..","..port)
+	bytes = lsok.send(chat.socket, queueName.."(sign)", ip, port)
 
 	conf.print("waiting response")
-	chat.skey, chat.cname = crh.recv(chat.skey, false)
+	chat.cname = lsok.recv(chat.socket, lsok.proto.udp)
 	--conf.print("received: "..chat.cname)
 	if(chat.cname == conf.signE) then
 		--error
@@ -137,7 +132,7 @@ function request.sign(queueName, ip, port, proto)
 		boolret = true
 	end
 
-	--gsh.deactivate(chat.skey)
+	--gsh.deactivate(chat.socket)
 
 	return boolret
 end

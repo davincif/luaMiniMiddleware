@@ -63,19 +63,16 @@ function srh.opensockets()
 		if(rval.reged == true) then
 			--only open socreatecket to those services who are registrated in the queue server
 			conf.print("service: "..rkey.."...")
-			rval.socket = lsok.open(lsok.proto.tcp)
+			rval.socket = lsok.open(lsok.proto.udp)
 			if(rval.socket == 0) then
 				error("LUA: Could not open socket")
 			end
-			ok = lsok.bind(rval.socket ,rval.ip, rval.port)
+			ok = lsok.bind(rval.socket, rval.ip, rval.port)
 			if(ok == false) then
 				error("could not bind socktable of queue service \""..rkey.."\"")
 			end
-			if(lsok.connect(rval.socket, rval.QS_IP, rval.QS_PORT) == false) then
-				error("Could not connect socket")
-			end
-			bytes = lsok.send(rval.socket, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")")
-			answere = lsok.recv(rval.socket, lsok.proto.tcp)
+			bytes = lsok.send(rval.socket, rkey.."(sign,server,"..services.getPassword()..","..rval.ip..","..rval.port..")", rval.QS_IP, rval.QS_PORT)
+			answere = lsok.recv(rval.socket, lsok.proto.udp)
 			conf.print("\t"..answere)
 			table.insert(tret, rval.socket)
 		end
@@ -94,7 +91,7 @@ local scmd
 local worked
 local keyt
 local taux
-local cs --connected socket
+local rs --rs = resquested service
 
 srh.findS()
 keyt = srh.opensockets()
@@ -102,29 +99,24 @@ keyt = srh.opensockets()
 while(true) do
 	worked = false
 
-	--receive the request from a new conection
+	--receive a new msg
 	taux = lsok.select(#keyt, keyt)
-for key, value in pairs(taux) do
-print(">>", key, value)
-end
 	if(taux ~= nil) then
-		conf.print("accept request identified")
+		conf.print("receive new msg")
 		for key, value in pairs(taux) do
-			cs = lsok.accept(value)
-			if(cs <= 0) then
-				break
+			--call invoker and return it's answere
+			scmd = lsok.recv(value, lsok.proto.udp)
+			if(scmd ~= nil) then
+				scmd, rs = invok.invoker(scmd)
+				conf.print("server will answer: "..scmd)
+				bytes = lsok.send(value, scmd, regS[rs].QS_IP, regS[rs].QS_PORT)
 			end
-		end
-		--call invoker and return it's answere
-		scmd = lsok.recv(cs, lsok.proto.tcp)
-		if(scmd ~= nil) then
-			scmd = qsinvok.invoker(scmd)
-			conf.print("server will answer: "..scmd)
-			bytes = lsok.send(cs, scmd)
-		end
-		if(lsok.close(cs) == false) then
-			print("Could not close socket")
-			--do some error handling stuff
+			--[[
+			if(lsok.close(value) == false) then
+				print("Could not close socket")
+				--do some error handling stuff
+			end
+			--]]
 		end
 		worked = true
 	end
@@ -132,7 +124,6 @@ end
 	if(worked == false) then
 		lsok.sleep(STP)
 	end
-	break
 end
 
 srh.closeServes()

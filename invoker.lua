@@ -31,5 +31,5 @@ function invok.invoker(command)
 		end
 	end
 
-	return answere
+	return answere, rs
 end

@@ -63,17 +63,13 @@ function qsrh.opensockets()
 		if(rval.reged == true) then
 			--only open socket to those services who are registrated in the queue server
 			if(rval.socket == nil) then
-				rval.socket = lsok.open(lsok.proto.tcp)
+				rval.socket = lsok.open(lsok.proto.udp)
 				if(rval.socket == 0) then
 					error("LUA: Could not open socket")
 				end
 				boolret = lsok.bind(rval.socket, rval.ip, rval.port)
 				if(boolret == false) then
 					error("could not bind socktable of queue service \""..rkey.."\"")
-				end
-				boolret = lsok.listen(rval.socket)
-				if(boolret == false) then
-					error("could not listen socktable of queue service \""..rkey.."\"")
 				end
 			end
 			table.insert(tret, rval.socket)
@@ -108,9 +104,8 @@ function qsrh.QS_update()
 				if(type(qscvalue) == "table" and qservices[serv].queue[qsckey].s_update == true) then
 					--update the client in qsckey
 					conf.print("\tupdating \""..qsckey.."\" queue client on the server")
-	print("update("..")", qregS[serv].socket, gsh.getsockname(qregS[serv].socket))
-					bytes = lsok.send(qregS[serv].socket, "update("..")")
-					answere = lsok.recv(qregS[serv].socket, lsok.proto.tcp)
+					bytes = lsok.send(value.socket, "update("..")", value.serverIP, value.serverPORT)
+					answere = lsok.recv(value.socket, lsok.proto.udp)
 					conf.print("\t"..answere)
 				end
 			end
@@ -137,8 +132,9 @@ local scmd
 local worked
 local keyt
 local taux
-local cs --connected socket
-
+local rq --rq = resquested queue
+local ip
+local port
 
 --request registration on the DNS
 qsrh.checkNregister()
@@ -147,23 +143,24 @@ keyt = qsrh.opensockets()
 while(true) do
 	worked = false
 
-	--receive the request from a new conection
+	--receive new msg
 	taux = lsok.select(#keyt, keyt)
 	if(taux ~= nil) then
-		conf.print("accept request identified in")
+		conf.print("receive new msg")
 		for key, value in pairs(taux) do
-			cs = lsok.accept(value)
-		end
-		--call invoker and return it's answere
-		scmd = lsok.recv(cs, lsok.proto.tcp)
-		if(scmd ~= nil) then
-			scmd = qsinvok.invoker(scmd)
-			conf.print("Qserver will answer: "..scmd)
-			bytes = lsok.send(cs, scmd)
-		end
-		if(lsok.close(cs) == false) then
-			print("Could not close socket")
-			--do some error handling stuff
+			--call invoker and return it's answere
+			scmd, ip, port = lsok.recv(value, lsok.proto.udp)
+			if(scmd ~= nil) then
+				scmd, rq = qsinvok.invoker(scmd)
+				conf.print("Qserver will answer: "..scmd)
+				bytes = lsok.send(value, scmd, ip, port)
+			end
+			--[[
+			if(lsok.close(cs) == false) then
+				print("Could not close socket")
+				--do some error handling stuff
+			end
+			]]
 		end
 		worked = true
 	end

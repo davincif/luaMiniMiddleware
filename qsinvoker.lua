@@ -122,7 +122,7 @@ function qsinvok.invoker(command)
 		end
 	end
 
-	return answere
+	return answere, rq
 end
 
 --[[LOCAL FUNCTIONS]]

@@ -1,5 +1,4 @@
 --[[	LOOKUP	]]
-require "crh"
 
 lookup = {}
 local serv = {} --services
@@ -13,11 +12,12 @@ function lookup.search(service)
 ]]
 	local ip
 	local port
-	local skey
+	local socket
 
 	if(type(service) ~= "string") then
 		error("LUA: lookup.search 1st argument spected to be string but it's " .. type(service))
 	else
+		socket = lsok.open(lsok.proto.udp)
 		if(serv[service] == nil) then
 			local si, sf
 			local sret --string returned
@@ -27,8 +27,9 @@ function lookup.search(service)
 			serv[service].qtd = 1 --the quantity registrated serves that provide the 'services'
 			serv[service][1] = {}
 
-			skey, bytes = crh.send("SEARCH("..service..")", nil, conf.dnsIP, conf.dnsPort, {proto = conf.dnsProto})
-			skey, sret = crh.recv(skey)
+			bytes = lsok.send(socket, "SEARCH("..service..")", conf.dnsIP, conf.dnsPort)
+			sret = lsok.recv(socket, lsok.proto.udp)
+print("retornou do dns: ", sret)
 			if(sret == conf.notFound) then
 				print("service \"" ..service.."\" not registrated at the DNS")
 				ip = sret
@@ -54,7 +55,7 @@ function lookup.search(service)
 		end
 	end
 
-	gsh.close(skey)
+	lsok.close(socket)
 
 	return ip, port
 end
